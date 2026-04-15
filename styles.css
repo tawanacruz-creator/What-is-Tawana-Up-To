@@ -299,6 +299,21 @@ nav {
     background-color: #c82333;
 }
 
+.delete-comment-btn {
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #dc3545;
+    color: #ffffff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.delete-comment-btn:hover {
+    background-color: #c82333;
+}
+
 /* Prompt Generator Styles */
 .hero {
     text-align: center;

@@ -105,7 +105,7 @@ function displayUploads(tab, uploads) {
         if (localStorage.getItem('isAdmin') === 'true') {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = 'Delete';
+            deleteBtn.textContent = 'Delete File';
             deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
             item.appendChild(deleteBtn);
         }
@@ -123,6 +123,16 @@ function displayComments(container, comments, uploadIndex, parentId) {
             <small>${new Date(comment.date).toLocaleString()}</small>
             <button class="reply-btn" onclick="showReplyForm('${comment.id}')">Reply</button>
         `;
+        
+        // Add delete button for comment if in admin mode
+        if (localStorage.getItem('isAdmin') === 'true') {
+            const deleteCommentBtn = document.createElement('button');
+            deleteCommentBtn.className = 'delete-comment-btn';
+            deleteCommentBtn.textContent = 'Delete';
+            deleteCommentBtn.addEventListener('click', () => deleteComment(uploadIndex, comment.id, parentId));
+            commentDiv.appendChild(deleteCommentBtn);
+        }
+        
         const replyForm = document.createElement('form');
         replyForm.className = 'reply-form';
         replyForm.style.display = 'none';
@@ -297,29 +307,30 @@ function handleReviewSubmit(event) {
 }
 
 // Save upload to localStorage
-function deleteUpload(tab, upload) {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+function deleteComment(uploadIndex, commentId, parentId) {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
     
-    // Determine the correct key based on tab
-    let key = 'writingUploads';
-    if (tab === 'reviews') {
-        key = 'reviewsUploads';
-    }
+    const uploads = JSON.parse(localStorage.getItem('writingUploads') || '[]');
+    const upload = uploads[uploadIndex];
     
-    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!upload || !upload.comments) return;
     
-    // Find the upload by matching date (unique identifier)
-    const indexToDelete = uploads.findIndex(item => item.date === upload.date);
-    if (indexToDelete !== -1) {
-        uploads.splice(indexToDelete, 1);
-        localStorage.setItem(key, JSON.stringify(uploads));
-        
-        if (key === 'writingUploads') {
-            displayWritingUploads(uploads);
-        } else {
-            displayUploads(tab, uploads);
+    function removeComment(comments) {
+        for (let i = 0; i < comments.length; i++) {
+            if (comments[i].id === commentId) {
+                comments.splice(i, 1);
+                return true;
+            }
+            if (comments[i].replies && removeComment(comments[i].replies)) {
+                return true;
+            }
         }
+        return false;
     }
+    
+    removeComment(upload.comments);
+    localStorage.setItem('writingUploads', JSON.stringify(uploads));
+    displayWritingUploads(uploads);
 }
 
 // Event listeners
