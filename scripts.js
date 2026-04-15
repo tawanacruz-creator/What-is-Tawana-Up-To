@@ -216,6 +216,7 @@ function handleUpload(event, tab) {
         reader.onload = function(e) {
             const arrayBuffer = e.target.result;
             const upload = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // unique ID
                 title: file.name,
                 date: new Date().toISOString(),
                 category: category,
@@ -255,6 +256,7 @@ function handleUpload(event, tab) {
 function handleReviewSubmit(event) {
     const formData = new FormData(event.target);
     const review = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // unique ID
         title: formData.get('book-title'),
         author: formData.get('author'),
         series: formData.get('series'),
@@ -307,6 +309,42 @@ function handleReviewSubmit(event) {
 }
 
 // Save upload to localStorage
+function saveUpload(tab, upload) {
+    const key = tab + 'Uploads';
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    uploads.push(upload);
+    localStorage.setItem(key, JSON.stringify(uploads));
+    if (tab === 'writing') {
+        displayWritingUploads(uploads);
+    } else {
+        displayUploads(tab, uploads);
+    }
+}
+
+function deleteUpload(tab, upload) {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+    
+    // Determine the correct key based on tab
+    let key = 'writingUploads';
+    if (tab === 'reviews') {
+        key = 'reviewsUploads';
+    }
+    
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    
+    // Find the upload by matching id (unique identifier)
+    const indexToDelete = uploads.findIndex(item => item.id === upload.id);
+    if (indexToDelete !== -1) {
+        uploads.splice(indexToDelete, 1);
+        localStorage.setItem(key, JSON.stringify(uploads));
+        
+        if (key === 'writingUploads') {
+            displayWritingUploads(uploads);
+        } else {
+            displayUploads(tab, uploads);
+        }
+    }
+}
 function deleteComment(uploadIndex, commentId, parentId) {
     if (!confirm('Are you sure you want to delete this comment?')) return;
     
