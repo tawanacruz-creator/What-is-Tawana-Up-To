@@ -334,56 +334,70 @@ function saveUpload(tab, upload) {
 }
 
 function openEditModal(tab, upload) {
-    let modalContent = '';
-    
-    if (tab === 'reviews' || tab.startsWith('reviews')) {
-        modalContent = `
-            <h3>Edit Review</h3>
-            <label>Book Title:</label>
-            <input type="text" id="edit-title" value="${upload.title}">
-            <label>Author:</label>
-            <input type="text" id="edit-author" value="${upload.author || ''}">
-            <label>Series:</label>
-            <input type="text" id="edit-series" value="${upload.series || ''}">
-            <label>Genre:</label>
-            <input type="text" id="edit-genre" value="${upload.genre || ''}">
-            <label>Rating:</label>
-            <select id="edit-rating">
-                <option value="1" ${upload.rating === 1 ? 'selected' : ''}>1 Star</option>
-                <option value="2" ${upload.rating === 2 ? 'selected' : ''}>2 Stars</option>
-                <option value="3" ${upload.rating === 3 ? 'selected' : ''}>3 Stars</option>
-                <option value="4" ${upload.rating === 4 ? 'selected' : ''}>4 Stars</option>
-                <option value="5" ${upload.rating === 5 ? 'selected' : ''}>5 Stars</option>
-            </select>
-            <label>Date Finished:</label>
-            <input type="date" id="edit-date-finished" value="${upload.dateFinished || ''}">
-        `;
-    } else {
-        modalContent = `
-            <h3>Edit ${upload.category === 'stories' ? 'Story' : 'Thought'}</h3>
-            <label>Title:</label>
-            <input type="text" id="edit-title" value="${upload.title}">
-            <label>Category:</label>
-            <select id="edit-category">
-                <option value="stories" ${upload.category === 'stories' ? 'selected' : ''}>Stories</option>
-                <option value="random-thoughts" ${upload.category === 'random-thoughts' ? 'selected' : ''}>Random Thoughts</option>
-            </select>
-            <label>Text Content:</label>
-            <textarea id="edit-fulltext" rows="15" style="width: 100%; font-family: monospace; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">${upload.fullText || upload.preview}</textarea>
-        `;
-    }
-    
     const modal = document.createElement('div');
     modal.className = 'edit-modal';
-    modal.innerHTML = `
-        <div class="edit-modal-content">
-            ${modalContent}
+    
+    const modalContent = document.createElement('div');
+    modalContent.className = 'edit-modal-content';
+    
+    // Create form fields
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        modalContent.innerHTML = `
+            <h3>Edit Review</h3>
+            <label>Book Title:</label>
+            <input type="text" id="edit-title">
+            <label>Author:</label>
+            <input type="text" id="edit-author">
+            <label>Series:</label>
+            <input type="text" id="edit-series">
+            <label>Genre:</label>
+            <input type="text" id="edit-genre">
+            <label>Rating:</label>
+            <select id="edit-rating">
+                <option value="1">1 Star</option>
+                <option value="2">2 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="5">5 Stars</option>
+            </select>
+            <label>Date Finished:</label>
+            <input type="date" id="edit-date-finished">
             <div class="edit-modal-buttons">
                 <button id="save-edit-btn" class="save-btn">Save Changes</button>
                 <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
             </div>
-        </div>
-    `;
+        `;
+        // Populate values after creation
+        document.getElementById('edit-title').value = upload.title || '';
+        document.getElementById('edit-author').value = upload.author || '';
+        document.getElementById('edit-series').value = upload.series || '';
+        document.getElementById('edit-genre').value = upload.genre || '';
+        document.getElementById('edit-rating').value = upload.rating || 3;
+        document.getElementById('edit-date-finished').value = upload.dateFinished || '';
+    } else {
+        modalContent.innerHTML = `
+            <h3>Edit ${upload.category === 'stories' ? 'Story' : 'Thought'}</h3>
+            <label>Title:</label>
+            <input type="text" id="edit-title">
+            <label>Category:</label>
+            <select id="edit-category">
+                <option value="stories">Stories</option>
+                <option value="random-thoughts">Random Thoughts</option>
+            </select>
+            <label>Text Content:</label>
+            <textarea id="edit-fulltext" class="edit-textarea"></textarea>
+            <div class="edit-modal-buttons">
+                <button id="save-edit-btn" class="save-btn">Save Changes</button>
+                <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
+            </div>
+        `;
+        // Populate values after creation
+        document.getElementById('edit-title').value = upload.title || '';
+        document.getElementById('edit-category').value = upload.category || 'stories';
+        document.getElementById('edit-fulltext').value = upload.fullText || upload.preview || '';
+    }
+    
+    modal.appendChild(modalContent);
     
     document.body.appendChild(modal);
     

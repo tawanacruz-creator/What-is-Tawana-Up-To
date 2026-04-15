@@ -643,3 +643,20 @@ nav {
     background-color: #5a6268;
 }
 
+.edit-textarea {
+    width: 100%;
+    font-family: monospace;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 300px;
+    line-height: 1.5;
+    font-size: 0.95rem;
+}
+
+.edit-textarea:focus {
+    outline: none;
+    border-color: #800000;
+    box-shadow: 0 0 3px rgba(128, 0, 0, 0.2);
+}
+
