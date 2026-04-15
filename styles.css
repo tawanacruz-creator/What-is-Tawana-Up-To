@@ -202,9 +202,56 @@ nav {
     margin-top: 0.5rem;
     font-size: 0.9rem;
     color: #5c4033;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
-.upload-image {
+.upload-preview p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #5c4033;
+    line-height: 1.6;
+}
+
+.upload-preview p:first-child {
+    margin-top: 0;
+}
+
+.upload-preview p:last-child {
+    margin-bottom: 0;
+}
+
+.upload-preview h1,
+.upload-preview h2,
+.upload-preview h3,
+.upload-preview h4,
+.upload-preview h5,
+.upload-preview h6 {
+    color: #800000;
+    margin: 0.75rem 0 0.5rem 0;
+}
+
+.upload-preview strong,
+.upload-preview b {
+    font-weight: bold;
+    color: #333;
+}
+
+.upload-preview em,
+.upload-preview i {
+    font-style: italic;
+}
+
+.upload-preview ul,
+.upload-preview ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.upload-preview li {
+    margin: 0.25rem 0;
+}
     max-width: 200px;
     max-height: 200px;
     margin-top: 0.5rem;

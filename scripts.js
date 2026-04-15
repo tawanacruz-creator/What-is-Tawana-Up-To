@@ -81,10 +81,18 @@ function displayUploads(tab, uploads) {
                 img.className = 'upload-image';
                 item.appendChild(img);
             } else {
-                const preview = document.createElement('p');
-                preview.className = 'upload-preview';
-                preview.textContent = upload.preview;
-                item.appendChild(preview);
+                // Display formatted content if available, otherwise plain text
+                if (upload.html) {
+                    const formattedDiv = document.createElement('div');
+                    formattedDiv.className = 'upload-preview';
+                    formattedDiv.innerHTML = upload.html;
+                    item.appendChild(formattedDiv);
+                } else {
+                    const preview = document.createElement('p');
+                    preview.className = 'upload-preview';
+                    preview.textContent = upload.preview;
+                    item.appendChild(preview);
+                }
             }
             // Add comments section
             const commentsDiv = document.createElement('div');
@@ -243,18 +251,37 @@ function handleUpload(event, tab) {
                 mammoth.convertToHtml({arrayBuffer: arrayBuffer})
                     .then(function(result) {
                         const html = result.value;
+                        // Store the formatted HTML for display
+                        upload.html = html;
+                        
+                        // Extract text while preserving formatting info
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = html;
-                        const text = tempDiv.textContent || tempDiv.innerText || '';
-                        const lines = text.split('\n').filter(line => line.trim());
-                        upload.fullText = text; // Store the full text for editing
-                        upload.preview = lines.slice(0, 2).join('\n');
-                        upload.url = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+                        
+                        // Get text with line breaks preserved from paragraphs
+                        const paragraphs = tempDiv.querySelectorAll('p');
+                        const textLines = [];
+                        paragraphs.forEach(p => {
+                            const text = p.textContent.trim();
+                            if (text) {
+                                textLines.push(text);
+                            }
+                        });
+                        
+                        const fullText = textLines.join('\n\n'); // Double line break between paragraphs
+                        upload.fullText = fullText; // Store the full text for editing
+                        
+                        // Create preview from first 2 paragraphs
+                        upload.preview = textLines.slice(0, 2).join('\n\n');
+                        
+                        // Download as HTML to preserve formatting
+                        upload.url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
                         saveUpload(tab, upload);
                     })
                     .catch(function(err) {
                         console.error('Error converting DOCX:', err);
                         upload.preview = 'Error reading file';
+                        upload.html = '<p>Error reading file</p>';
                         upload.url = '#';
                         saveUpload(tab, upload);
                     });
@@ -445,12 +472,16 @@ function saveEditUpload(tab, upload, modal) {
                 const newText = textArea.value;
                 uploads[uploadIndex].fullText = newText;
                 
-                // Update preview (first 2 lines)
-                const lines = newText.split('\n').filter(line => line.trim());
-                uploads[uploadIndex].preview = lines.slice(0, 2).join('\n');
+                // Convert edited text back to HTML with proper paragraph formatting
+                const paragraphs = newText.split('\n\n').filter(p => p.trim());
+                const htmlContent = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('\n');
+                uploads[uploadIndex].html = htmlContent;
                 
-                // Update download URL
-                uploads[uploadIndex].url = 'data:text/plain;charset=utf-8,' + encodeURIComponent(newText);
+                // Update preview (first 2 paragraphs)
+                uploads[uploadIndex].preview = paragraphs.slice(0, 2).join('\n\n');
+                
+                // Update download URL to HTML to preserve formatting
+                uploads[uploadIndex].url = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
             }
         }
         
