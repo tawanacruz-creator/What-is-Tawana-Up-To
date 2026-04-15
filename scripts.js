@@ -101,6 +101,14 @@ function displayUploads(tab, uploads) {
             commentsDiv.appendChild(commentForm);
             item.appendChild(commentsDiv);
         }
+        // Add delete button if in admin mode
+        if (localStorage.getItem('isAdmin') === 'true') {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => deleteUpload(tab, index));
+            item.appendChild(deleteBtn);
+        }
         container.appendChild(item);
     });
 }
@@ -289,10 +297,11 @@ function handleReviewSubmit(event) {
 }
 
 // Save upload to localStorage
-function saveUpload(tab, upload) {
+function deleteUpload(tab, index) {
+    if (!confirm('Are you sure you want to delete this item?')) return;
     const key = tab + 'Uploads';
     const uploads = JSON.parse(localStorage.getItem(key) || '[]');
-    uploads.push(upload);
+    uploads.splice(index, 1);
     localStorage.setItem(key, JSON.stringify(uploads));
     if (tab === 'writing') {
         displayWritingUploads(uploads);
@@ -335,14 +344,22 @@ function showAdminForms() {
     document.querySelectorAll('.review-form').forEach(form => {
         form.style.display = 'grid';
     });
+    document.querySelectorAll('.song-form').forEach(form => {
+        form.style.display = 'block';
+    });
     document.getElementById('admin-toggle').textContent = 'Exit Admin Mode';
+    loadUploads(); // Reload to show delete buttons
 }
 
 function hideAdminForms() {
     document.querySelectorAll('.upload-form, .review-form').forEach(form => {
         form.style.display = 'none';
     });
+    document.querySelectorAll('.song-form').forEach(form => {
+        form.style.display = 'none';
+    });
     document.getElementById('admin-toggle').textContent = 'Admin Mode';
+    loadUploads(); // Reload to hide delete buttons
 }
 
 // Load on page load
@@ -350,7 +367,72 @@ window.addEventListener('load', function() {
     loadUploads();
     checkAdminMode();
     initializePromptGenerator();
+    initializeSongOfTheDay();
 });
+
+// ============ SONG OF THE DAY ============
+
+function initializeSongOfTheDay() {
+    const songForm = document.getElementById('song-form');
+    if (songForm) {
+        songForm.addEventListener('submit', handleSongEmbed);
+    }
+    loadSongOfTheDay();
+}
+
+function handleSongEmbed(e) {
+    e.preventDefault();
+    const input = document.getElementById('song-embed');
+    const value = input.value.trim();
+    if (!value) return;
+
+    let trackId = value;
+    // Extract track ID from URL if full URL provided
+    const match = value.match(/track\/([a-zA-Z0-9]+)/);
+    if (match) {
+        trackId = match[1];
+    }
+
+    const songData = {
+        trackId: trackId,
+        date: new Date().toISOString()
+    };
+
+    localStorage.setItem('songOfTheDay', JSON.stringify(songData));
+    displaySongOfTheDay(songData);
+
+    // Reset form
+    input.value = '';
+}
+
+function loadSongOfTheDay() {
+    const songData = localStorage.getItem('songOfTheDay');
+    if (songData) {
+        displaySongOfTheDay(JSON.parse(songData));
+    } else {
+        const display = document.getElementById('song-display');
+        if (display) {
+            display.innerHTML = '<p>No song embedded yet.</p>';
+        }
+    }
+}
+
+function displaySongOfTheDay(songData) {
+    const display = document.getElementById('song-display');
+    if (!display) return;
+
+    // Create Spotify embed
+    const embedUrl = `https://open.spotify.com/embed/track/${songData.trackId}`;
+
+    display.innerHTML = `
+        <iframe src="${embedUrl}" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+    `;
+
+    // Reload Spotify embed if the script is available
+    if (window.Spotify && window.Spotify.Embed) {
+        window.Spotify.Embed.reload();
+    }
+}
 
 // ============ PROMPT GENERATOR ============
 

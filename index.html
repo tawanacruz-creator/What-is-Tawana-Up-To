@@ -16,6 +16,7 @@
         <button class="tab-button active" onclick="openTab('writing')">Things I'm Writing</button>
         <button class="tab-button" onclick="openTab('reviews')">Reading Reviews</button>
         <button class="tab-button" onclick="openTab('prompts')">Prompt Generator</button>
+        <button class="tab-button" onclick="openTab('song')">Song of the Day</button>
     </nav>
     <main>
         <div id="writing" class="tab-content active">
@@ -135,7 +136,18 @@
                 <p>Tip: You can also click any wheel to spin it separately, and choose a timer length to get started.</p>
             </section>
         </div>
+        <div id="song" class="tab-content">
+            <h2>Song of the Day</h2>
+            <p>The vibes for today</p>
+            <form class="song-form" id="song-form">
+                <label for="song-embed">Spotify Track URL or ID:</label>
+                <input type="text" id="song-embed" name="song-embed" placeholder="e.g., https://open.spotify.com/track/... or just the track ID" required>
+                <button type="submit">Embed Song</button>
+            </form>
+            <div id="song-display" class="song-display"></div>
+        </div>
     </main>
+    <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
     <script src="scripts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
 </body>

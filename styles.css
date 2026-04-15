@@ -285,6 +285,20 @@ nav {
     background-color: #b8860b;
 }
 
+.delete-btn {
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: #dc3545;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
 /* Prompt Generator Styles */
 .hero {
     text-align: center;
@@ -444,8 +458,61 @@ nav {
     border: 1px solid #d4a574;
 }
 
-.note p {
-    margin: 0;
+/* Song of the Day Styles */
+.song-form {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid #d4a574;
+    border-radius: 8px;
+    background-color: rgba(180, 134, 11, 0.05);
+}
+
+.song-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #2c1810;
+    font-weight: bold;
+}
+
+.song-form input[type="text"] {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #d4a574;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+.song-form button {
+    background-color: #800000;
+    color: #ffffff;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+.song-form button:hover {
+    background-color: #a00000;
+}
+
+.song-display {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.song-display iframe {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(128, 0, 0, 0.15);
+}
+
+.song-display p {
     color: #5c4033;
+    font-size: 0.95rem;
+    margin-top: 1rem;
 }
 
