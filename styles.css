@@ -731,3 +731,10 @@ nav {
     box-shadow: 0 0 3px rgba(128, 0, 0, 0.2);
 }
 
+.text-preview, .text-full {
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #5c4033;
+    line-height: 1.6;
+}
+
