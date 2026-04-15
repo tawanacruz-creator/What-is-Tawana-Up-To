@@ -101,13 +101,24 @@ function displayUploads(tab, uploads) {
             commentsDiv.appendChild(commentForm);
             item.appendChild(commentsDiv);
         }
-        // Add delete button if in admin mode
+        // Add edit and delete buttons if in admin mode
         if (localStorage.getItem('isAdmin') === 'true') {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'admin-buttons';
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'edit-btn';
+            editBtn.textContent = 'Edit';
+            editBtn.addEventListener('click', () => openEditModal(tab, upload));
+            buttonContainer.appendChild(editBtn);
+            
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.textContent = 'Delete File';
             deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
-            item.appendChild(deleteBtn);
+            buttonContainer.appendChild(deleteBtn);
+            
+            item.appendChild(buttonContainer);
         }
         container.appendChild(item);
     });
@@ -318,6 +329,110 @@ function saveUpload(tab, upload) {
         displayWritingUploads(uploads);
     } else {
         displayUploads(tab, uploads);
+    }
+}
+
+function openEditModal(tab, upload) {
+    let modalContent = '';
+    
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        modalContent = `
+            <h3>Edit Review</h3>
+            <label>Book Title:</label>
+            <input type="text" id="edit-title" value="${upload.title}">
+            <label>Author:</label>
+            <input type="text" id="edit-author" value="${upload.author || ''}">
+            <label>Series:</label>
+            <input type="text" id="edit-series" value="${upload.series || ''}">
+            <label>Genre:</label>
+            <input type="text" id="edit-genre" value="${upload.genre || ''}">
+            <label>Rating:</label>
+            <select id="edit-rating">
+                <option value="1" ${upload.rating === 1 ? 'selected' : ''}>1 Star</option>
+                <option value="2" ${upload.rating === 2 ? 'selected' : ''}>2 Stars</option>
+                <option value="3" ${upload.rating === 3 ? 'selected' : ''}>3 Stars</option>
+                <option value="4" ${upload.rating === 4 ? 'selected' : ''}>4 Stars</option>
+                <option value="5" ${upload.rating === 5 ? 'selected' : ''}>5 Stars</option>
+            </select>
+            <label>Date Finished:</label>
+            <input type="date" id="edit-date-finished" value="${upload.dateFinished || ''}">
+        `;
+    } else {
+        modalContent = `
+            <h3>Edit ${upload.category === 'stories' ? 'Story' : 'Thought'}</h3>
+            <label>Title:</label>
+            <input type="text" id="edit-title" value="${upload.title}">
+            <label>Category:</label>
+            <select id="edit-category">
+                <option value="stories" ${upload.category === 'stories' ? 'selected' : ''}>Stories</option>
+                <option value="random-thoughts" ${upload.category === 'random-thoughts' ? 'selected' : ''}>Random Thoughts</option>
+            </select>
+        `;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'edit-modal';
+    modal.innerHTML = `
+        <div class="edit-modal-content">
+            ${modalContent}
+            <div class="edit-modal-buttons">
+                <button id="save-edit-btn" class="save-btn">Save Changes</button>
+                <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('save-edit-btn').addEventListener('click', () => {
+        saveEditUpload(tab, upload, modal);
+    });
+    
+    document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+function saveEditUpload(tab, upload, modal) {
+    let key = 'writingUploads';
+    let mainTab = 'writing';
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        key = 'reviewsUploads';
+        mainTab = 'reviews';
+    }
+    
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    const uploadIndex = uploads.findIndex(item => item.id === upload.id);
+    
+    if (uploadIndex !== -1) {
+        if (mainTab === 'reviews') {
+            uploads[uploadIndex].title = document.getElementById('edit-title').value;
+            uploads[uploadIndex].author = document.getElementById('edit-author').value;
+            uploads[uploadIndex].series = document.getElementById('edit-series').value;
+            uploads[uploadIndex].genre = document.getElementById('edit-genre').value;
+            uploads[uploadIndex].rating = parseInt(document.getElementById('edit-rating').value);
+            uploads[uploadIndex].dateFinished = document.getElementById('edit-date-finished').value;
+        } else {
+            uploads[uploadIndex].title = document.getElementById('edit-title').value;
+            uploads[uploadIndex].category = document.getElementById('edit-category').value;
+        }
+        
+        localStorage.setItem(key, JSON.stringify(uploads));
+        
+        if (mainTab === 'writing') {
+            displayWritingUploads(uploads);
+        } else {
+            displayUploads(mainTab, uploads);
+        }
+        
+        modal.remove();
+        alert('Changes saved!');
     }
 }
 
