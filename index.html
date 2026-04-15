@@ -16,7 +16,6 @@
         <button class="tab-button active" onclick="openTab('writing')">Things I'm Writing</button>
         <button class="tab-button" onclick="openTab('reviews')">Reading Reviews</button>
         <button class="tab-button" onclick="openTab('prompts')">Prompt Generator</button>
-        <button class="tab-button" onclick="openTab('song')">Song of the Day</button>
     </nav>
     <main>
         <div id="writing" class="tab-content active">
@@ -32,7 +31,6 @@
                 </select>
                 <button type="submit">Upload</button>
             </form>
-            <button type="button" class="editor-access" onclick="openAdminEditor()">Open Admin Editor</button>
             <div class="writing-subsections">
                 <div class="writing-subsection">
                     <h3>Stories</h3>
@@ -77,7 +75,6 @@
 
                 <button type="submit">Add Review</button>
             </form>
-            <button type="button" class="editor-access" onclick="openAdminEditor()">Open Admin Editor</button>
             <div id="reviews-uploads" class="uploads-list"></div>
         </div>
         <div id="prompts" class="tab-content">
@@ -138,37 +135,7 @@
                 <p>Tip: You can also click any wheel to spin it separately, and choose a timer length to get started.</p>
             </section>
         </div>
-        <div id="song" class="tab-content">
-            <h2>Song of the Day</h2>
-            <p>The vibes for today</p>
-            <form class="song-form" id="song-form">
-                <label for="song-search">Search for a song:</label>
-                <div class="search-container">
-                    <input type="text" id="song-search" name="song-search" placeholder="Search by song title or artist..." autocomplete="off">
-                    <div id="search-results" class="search-results"></div>
-                </div>
-                <div id="selected-song" class="selected-song" style="display: none;">
-                    <p><strong>Selected: </strong><span id="selected-song-name"></span></p>
-                </div>
-                <button type="submit" id="song-update-btn" disabled>Update Song</button>
-            </form>
-            <div id="song-display" class="song-display"></div>
-        </div>
     </main>
-    <div id="editor-section" class="editor-section">
-        <h3>Admin Editor</h3>
-        <p class="editor-note">Only visible in admin mode. Create, edit, save, and delete text files from the browser.</p>
-        <div class="editor-controls">
-            <input type="text" id="editor-file-name" placeholder="New file name (e.g. my-note.txt)">
-            <button type="button" id="editor-new-btn">New File</button>
-            <button type="button" id="editor-save-btn">Save File</button>
-            <button type="button" id="editor-delete-btn">Delete File</button>
-        </div>
-        <div id="editor-file-list" class="file-list"></div>
-        <div id="editor-container" class="editor-container"></div>
-    </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.11.2/ace.js" integrity="sha512-/poB7nNomQ+ZvVevrZI78XZf1x0yidOeWlQ+fB0ZNDf0aQQ+4NNBubw3aQAPbt5XD9W1vqysXi43aXn+1d4ZVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
     <script src="scripts.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
 </body>
