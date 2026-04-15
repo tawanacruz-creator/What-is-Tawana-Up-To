@@ -63,10 +63,51 @@ function displayUploads(tab, uploads) {
                     img.className = 'upload-image';
                     item.appendChild(img);
                 } else {
-                    const preview = document.createElement('p');
-                    preview.className = 'upload-preview';
-                    preview.textContent = upload.preview;
-                    item.appendChild(preview);
+                    // Collapsible, formatted text preview for reviews
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'text-preview-container';
+
+                    // Preview (first 2 lines)
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'text-preview collapsed';
+                    const previewText = document.createElement('p');
+                    previewText.className = 'upload-preview';
+                    previewText.textContent = upload.preview;
+                    previewDiv.appendChild(previewText);
+                    previewContainer.appendChild(previewDiv);
+
+                    // Full text (hidden by default)
+                    const fullDiv = document.createElement('div');
+                    fullDiv.className = 'text-full';
+                    fullDiv.style.display = 'none';
+                    if (upload.html) {
+                        fullDiv.innerHTML = upload.html;
+                    } else {
+                        const fullText = document.createElement('p');
+                        fullText.className = 'upload-preview';
+                        fullText.textContent = upload.fullText || upload.preview;
+                        fullDiv.appendChild(fullText);
+                    }
+                    previewContainer.appendChild(fullDiv);
+
+                    // Expand/collapse button
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-text-btn';
+                    expandBtn.innerHTML = '▼ Show More';
+                    expandBtn.addEventListener('click', function() {
+                        const isExpanded = fullDiv.style.display !== 'none';
+                        if (isExpanded) {
+                            fullDiv.style.display = 'none';
+                            previewDiv.classList.add('collapsed');
+                            expandBtn.innerHTML = '▼ Show More';
+                        } else {
+                            fullDiv.style.display = 'block';
+                            previewDiv.classList.remove('collapsed');
+                            expandBtn.innerHTML = '▲ Show Less';
+                        }
+                    });
+                    previewContainer.appendChild(expandBtn);
+                    item.appendChild(previewContainer);
                 }
             }
         } else {
@@ -85,7 +126,7 @@ function displayUploads(tab, uploads) {
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'text-preview-container';
                 
-                // Create preview (first 2 lines)
+                // Preview (first 2 lines)
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'text-preview collapsed';
                 const previewText = document.createElement('p');
@@ -94,7 +135,7 @@ function displayUploads(tab, uploads) {
                 previewDiv.appendChild(previewText);
                 previewContainer.appendChild(previewDiv);
                 
-                // Create full text (hidden by default)
+                // Full text (hidden by default)
                 const fullDiv = document.createElement('div');
                 fullDiv.className = 'text-full';
                 fullDiv.style.display = 'none';
@@ -109,7 +150,7 @@ function displayUploads(tab, uploads) {
                 }
                 previewContainer.appendChild(fullDiv);
                 
-                // Create expand button
+                // Expand/collapse button
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-text-btn';
                 expandBtn.innerHTML = '▼ Show More';
