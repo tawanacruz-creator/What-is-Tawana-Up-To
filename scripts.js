@@ -81,18 +81,52 @@ function displayUploads(tab, uploads) {
                 img.className = 'upload-image';
                 item.appendChild(img);
             } else {
-                // Display formatted content if available, otherwise plain text
+                // Create collapsible text preview
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'text-preview-container';
+                
+                // Create preview (first 2 lines)
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'text-preview collapsed';
+                const previewText = document.createElement('p');
+                previewText.className = 'upload-preview';
+                previewText.textContent = upload.preview;
+                previewDiv.appendChild(previewText);
+                previewContainer.appendChild(previewDiv);
+                
+                // Create full text (hidden by default)
+                const fullDiv = document.createElement('div');
+                fullDiv.className = 'text-full';
+                fullDiv.style.display = 'none';
                 if (upload.html) {
-                    const formattedDiv = document.createElement('div');
-                    formattedDiv.className = 'upload-preview';
-                    formattedDiv.innerHTML = upload.html;
-                    item.appendChild(formattedDiv);
+                    fullDiv.className = 'text-full';
+                    fullDiv.innerHTML = upload.html;
                 } else {
-                    const preview = document.createElement('p');
-                    preview.className = 'upload-preview';
-                    preview.textContent = upload.preview;
-                    item.appendChild(preview);
+                    const fullText = document.createElement('p');
+                    fullText.className = 'upload-preview';
+                    fullText.textContent = upload.fullText || upload.preview;
+                    fullDiv.appendChild(fullText);
                 }
+                previewContainer.appendChild(fullDiv);
+                
+                // Create expand button
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-text-btn';
+                expandBtn.innerHTML = '▼ Show More';
+                expandBtn.addEventListener('click', function() {
+                    const isExpanded = fullDiv.style.display !== 'none';
+                    if (isExpanded) {
+                        fullDiv.style.display = 'none';
+                        previewDiv.classList.add('collapsed');
+                        expandBtn.innerHTML = '▼ Show More';
+                    } else {
+                        fullDiv.style.display = 'block';
+                        previewDiv.classList.remove('collapsed');
+                        expandBtn.innerHTML = '▲ Show Less';
+                    }
+                });
+                previewContainer.appendChild(expandBtn);
+                item.appendChild(previewContainer);
             }
             // Add comments section
             const commentsDiv = document.createElement('div');
@@ -109,24 +143,13 @@ function displayUploads(tab, uploads) {
             commentsDiv.appendChild(commentForm);
             item.appendChild(commentsDiv);
         }
-        // Add edit and delete buttons if in admin mode
+        // Add delete button if in admin mode
         if (localStorage.getItem('isAdmin') === 'true') {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'admin-buttons';
-            
-            const editBtn = document.createElement('button');
-            editBtn.className = 'edit-btn';
-            editBtn.textContent = 'Edit';
-            editBtn.addEventListener('click', () => openEditModal(tab, upload));
-            buttonContainer.appendChild(editBtn);
-            
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.textContent = 'Delete File';
             deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
-            buttonContainer.appendChild(deleteBtn);
-            
-            item.appendChild(buttonContainer);
+            item.appendChild(deleteBtn);
         }
         container.appendChild(item);
     });

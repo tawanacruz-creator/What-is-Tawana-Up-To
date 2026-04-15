@@ -253,6 +253,50 @@ nav {
 .upload-preview li {
     margin: 0.25rem 0;
 }
+
+.text-preview-container {
+    margin-top: 0.5rem;
+}
+
+.text-preview.collapsed {
+    max-height: 3.5em;
+    overflow: hidden;
+    position: relative;
+}
+
+.text-preview.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1em;
+    background: linear-gradient(transparent, rgba(255,255,255,0.9));
+}
+
+.text-full {
+    margin-top: 0.5rem;
+}
+
+.expand-text-btn {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.expand-text-btn:hover {
+    background-color: #e0e0e0;
+    border-color: #999;
+}
+
+.upload-image {
     max-width: 200px;
     max-height: 200px;
     margin-top: 0.5rem;
@@ -577,27 +621,6 @@ nav {
     color: #5c4033;
     font-size: 0.95rem;
     margin-top: 1rem;
-}
-
-/* Admin Buttons Container */
-.admin-buttons {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-.edit-btn {
-    padding: 0.5rem 1rem;
-    background-color: #0d6efd;
-    color: #ffffff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.edit-btn:hover {
-    background-color: #0b5ed7;
 }
 
 /* Edit Modal Styles */
