@@ -326,8 +326,10 @@ function deleteUpload(tab, upload) {
     
     // Determine the correct key based on tab
     let key = 'writingUploads';
-    if (tab === 'reviews') {
+    let mainTab = 'writing';
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
         key = 'reviewsUploads';
+        mainTab = 'reviews';
     }
     
     const uploads = JSON.parse(localStorage.getItem(key) || '[]');
@@ -338,10 +340,10 @@ function deleteUpload(tab, upload) {
         uploads.splice(indexToDelete, 1);
         localStorage.setItem(key, JSON.stringify(uploads));
         
-        if (key === 'writingUploads') {
+        if (mainTab === 'writing') {
             displayWritingUploads(uploads);
         } else {
-            displayUploads(tab, uploads);
+            displayUploads(mainTab, uploads);
         }
     }
 }
