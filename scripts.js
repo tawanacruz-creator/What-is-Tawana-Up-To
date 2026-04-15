@@ -106,7 +106,7 @@ function displayUploads(tab, uploads) {
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
             deleteBtn.textContent = 'Delete';
-            deleteBtn.addEventListener('click', () => deleteUpload(tab, index));
+            deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
             item.appendChild(deleteBtn);
         }
         container.appendChild(item);
@@ -297,16 +297,28 @@ function handleReviewSubmit(event) {
 }
 
 // Save upload to localStorage
-function deleteUpload(tab, index) {
+function deleteUpload(tab, upload) {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    const key = tab + 'Uploads';
+    
+    // Determine the correct key based on tab
+    let key = 'writingUploads';
+    if (tab === 'reviews') {
+        key = 'reviewsUploads';
+    }
+    
     const uploads = JSON.parse(localStorage.getItem(key) || '[]');
-    uploads.splice(index, 1);
-    localStorage.setItem(key, JSON.stringify(uploads));
-    if (tab === 'writing') {
-        displayWritingUploads(uploads);
-    } else {
-        displayUploads(tab, uploads);
+    
+    // Find the upload by matching date (unique identifier)
+    const indexToDelete = uploads.findIndex(item => item.date === upload.date);
+    if (indexToDelete !== -1) {
+        uploads.splice(indexToDelete, 1);
+        localStorage.setItem(key, JSON.stringify(uploads));
+        
+        if (key === 'writingUploads') {
+            displayWritingUploads(uploads);
+        } else {
+            displayUploads(tab, uploads);
+        }
     }
 }
 
