@@ -247,6 +247,7 @@ function handleUpload(event, tab) {
                         tempDiv.innerHTML = html;
                         const text = tempDiv.textContent || tempDiv.innerText || '';
                         const lines = text.split('\n').filter(line => line.trim());
+                        upload.fullText = text; // Store the full text for editing
                         upload.preview = lines.slice(0, 2).join('\n');
                         upload.url = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
                         saveUpload(tab, upload);
@@ -367,6 +368,8 @@ function openEditModal(tab, upload) {
                 <option value="stories" ${upload.category === 'stories' ? 'selected' : ''}>Stories</option>
                 <option value="random-thoughts" ${upload.category === 'random-thoughts' ? 'selected' : ''}>Random Thoughts</option>
             </select>
+            <label>Text Content:</label>
+            <textarea id="edit-fulltext" rows="15" style="width: 100%; font-family: monospace; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">${upload.fullText || upload.preview}</textarea>
         `;
     }
     
@@ -421,6 +424,20 @@ function saveEditUpload(tab, upload, modal) {
         } else {
             uploads[uploadIndex].title = document.getElementById('edit-title').value;
             uploads[uploadIndex].category = document.getElementById('edit-category').value;
+            
+            // Update text content if editing writing files
+            const textArea = document.getElementById('edit-fulltext');
+            if (textArea) {
+                const newText = textArea.value;
+                uploads[uploadIndex].fullText = newText;
+                
+                // Update preview (first 2 lines)
+                const lines = newText.split('\n').filter(line => line.trim());
+                uploads[uploadIndex].preview = lines.slice(0, 2).join('\n');
+                
+                // Update download URL
+                uploads[uploadIndex].url = 'data:text/plain;charset=utf-8,' + encodeURIComponent(newText);
+            }
         }
         
         localStorage.setItem(key, JSON.stringify(uploads));
