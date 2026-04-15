@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Life and Times of Tawana</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>The Life and Times of Tawana</h1>
+        <button id="admin-toggle" onclick="toggleAdminMode()">Admin Mode</button>
+    </header>
+    <nav>
+        <button class="tab-button active" onclick="openTab('writing')">Things I'm Writing</button>
+        <button class="tab-button" onclick="openTab('reviews')">Reading Reviews</button>
+        <button class="tab-button" onclick="openTab('prompts')">Prompt Generator</button>
+        <button class="tab-button" onclick="openTab('song')">Song of the Day</button>
+    </nav>
+    <main>
+        <div id="writing" class="tab-content active">
+            <h2>Things I'm Writing</h2>
+            <p>Welcome to the trip, lads. Questionable ideas ahoy! </p>
+            <form class="upload-form" id="writing-form">
+                <label for="writing-file">Upload a DOCX or JPEG file:</label>
+                <input type="file" id="writing-file" name="writing-file" accept=".docx,.jpeg,.jpg">
+                <label for="writing-category">Section:</label>
+                <select id="writing-category" name="writing-category">
+                    <option value="stories">Stories</option>
+                    <option value="random-thoughts">Random Thoughts</option>
+                </select>
+                <button type="submit">Upload</button>
+            </form>
+            <button type="button" class="editor-access" onclick="openAdminEditor()">Open Admin Editor</button>
+            <div class="writing-subsections">
+                <div class="writing-subsection">
+                    <h3>Stories</h3>
+                    <div id="writing-stories-uploads" class="uploads-list"></div>
+                </div>
+                <div class="writing-subsection">
+                    <h3>Random Thoughts</h3>
+                    <div id="writing-random-thoughts-uploads" class="uploads-list"></div>
+                </div>
+            </div>
+        </div>
+        <div id="reviews" class="tab-content">
+            <h2>Reading Reviews</h2>
+            <p>Armed with irrelevant thoughts about the things I read</p>
+            <form class="review-form" id="reviews-form">
+                <label for="book-title">Book Title:</label>
+                <input type="text" id="book-title" name="book-title" required>
+
+                <label for="author">Author:</label>
+                <input type="text" id="author" name="author" required>
+
+                <label for="series">Series (optional):</label>
+                <input type="text" id="series" name="series">
+
+                <label for="genre">Genre:</label>
+                <input type="text" id="genre" name="genre" required>
+
+                <label for="date-finished">Date Finished:</label>
+                <input type="date" id="date-finished" name="date-finished" required>
+
+                <label>Rating:</label>
+                <div class="star-rating">
+                    <input type="radio" id="star5" name="rating" value="5"><label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4"><label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3"><label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2"><label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
+                </div>
+
+                <label for="reviews-file">Upload a DOCX or JPEG file (optional):</label>
+                <input type="file" id="reviews-file" name="reviews-file" accept=".docx,.jpeg,.jpg">
+
+                <button type="submit">Add Review</button>
+            </form>
+            <button type="button" class="editor-access" onclick="openAdminEditor()">Open Admin Editor</button>
+            <div id="reviews-uploads" class="uploads-list"></div>
+        </div>
+        <div id="prompts" class="tab-content">
+            <section class="hero">
+                <h2>The Enabler of Utter Madness</h2>
+                <p>Press <strong>Enter</strong> to spin all four wheels and generate a fresh writing prompt.</p>
+            </section>
+
+            <section class="wheels-grid">
+                <article class="wheel-card" data-wheel="character">
+                    <h3>Character Type</h3>
+                    <div class="wheel" id="wheel-character">
+                        <div class="wheel-ring"></div>
+                        <div class="wheel-content" id="result-character">Press Enter</div>
+                    </div>
+                </article>
+
+                <article class="wheel-card" data-wheel="location">
+                    <h3>Location</h3>
+                    <div class="wheel" id="wheel-location">
+                        <div class="wheel-ring"></div>
+                        <div class="wheel-content" id="result-location">Press Enter</div>
+                    </div>
+                </article>
+
+                <article class="wheel-card" data-wheel="motive">
+                    <h3>Motive</h3>
+                    <div class="wheel" id="wheel-motive">
+                        <div class="wheel-ring"></div>
+                        <div class="wheel-content" id="result-motive">Press Enter</div>
+                    </div>
+                </article>
+
+                <article class="wheel-card" data-wheel="complication">
+                    <h3>Complication</h3>
+                    <div class="wheel" id="wheel-complication">
+                        <div class="wheel-ring"></div>
+                        <div class="wheel-content" id="result-complication">Press Enter</div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="timers-panel">
+                <article class="timer-card">
+                    <h3>Writing Timer</h3>
+                    <div class="timer-display" id="timer-display">00:00</div>
+                    <div class="timer-controls">
+                        <button class="timer-btn" data-minutes="10">10 min</button>
+                        <button class="timer-btn" data-minutes="15">15 min</button>
+                        <button class="timer-btn" data-minutes="20">20 min</button>
+                        <button class="timer-btn" data-minutes="30">30 min</button>
+                    </div>
+                    <button class="timer-btn stop-btn" id="timer-stop">Stop</button>
+                </article>
+            </section>
+
+            <section class="note">
+                <p>Tip: You can also click any wheel to spin it separately, and choose a timer length to get started.</p>
+            </section>
+        </div>
+        <div id="song" class="tab-content">
+            <h2>Song of the Day</h2>
+            <p>The vibes for today</p>
+            <form class="song-form" id="song-form">
+                <label for="song-search">Search for a song:</label>
+                <div class="search-container">
+                    <input type="text" id="song-search" name="song-search" placeholder="Search by song title or artist..." autocomplete="off">
+                    <div id="search-results" class="search-results"></div>
+                </div>
+                <div id="selected-song" class="selected-song" style="display: none;">
+                    <p><strong>Selected: </strong><span id="selected-song-name"></span></p>
+                </div>
+                <button type="submit" id="song-update-btn" disabled>Update Song</button>
+            </form>
+            <div id="song-display" class="song-display"></div>
+        </div>
+    </main>
+    <div id="editor-section" class="editor-section">
+        <h3>Admin Editor</h3>
+        <p class="editor-note">Only visible in admin mode. Create, edit, save, and delete text files from the browser.</p>
+        <div class="editor-controls">
+            <input type="text" id="editor-file-name" placeholder="New file name (e.g. my-note.txt)">
+            <button type="button" id="editor-new-btn">New File</button>
+            <button type="button" id="editor-save-btn">Save File</button>
+            <button type="button" id="editor-delete-btn">Delete File</button>
+        </div>
+        <div id="editor-file-list" class="file-list"></div>
+        <div id="editor-container" class="editor-container"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.11.2/ace.js" integrity="sha512-/poB7nNomQ+ZvVevrZI78XZf1x0yidOeWlQ+fB0ZNDf0aQQ+4NNBubw3aQAPbt5XD9W1vqysXi43aXn+1d4ZVA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
+    <script src="scripts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+</body>
+</html>
