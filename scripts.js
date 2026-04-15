@@ -258,13 +258,14 @@ function handleUpload(event, tab) {
                         const tempDiv = document.createElement('div');
                         tempDiv.innerHTML = html;
                         
-                        // Get text with line breaks preserved from paragraphs
+                        // Get text with ALL spacing preserved from paragraphs
                         const paragraphs = tempDiv.querySelectorAll('p');
                         const textLines = [];
                         paragraphs.forEach(p => {
-                            const text = p.textContent.trim();
-                            if (text) {
-                                textLines.push(text);
+                            // Get all text content without trimming (preserves spacing)
+                            const text = p.textContent;
+                            if (text.trim()) { // Only include non-empty paragraphs
+                                textLines.push(text); // Keep original spacing
                             }
                         });
                         
@@ -394,7 +395,13 @@ function openEditModal(tab, upload) {
                 <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
             </div>
         `;
-        // Populate values after creation
+    }
+    
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+    
+    // Populate values AFTER modal is in DOM to ensure elements exist
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
         document.getElementById('edit-title').value = upload.title || '';
         document.getElementById('edit-author').value = upload.author || '';
         document.getElementById('edit-series').value = upload.series || '';
@@ -402,31 +409,13 @@ function openEditModal(tab, upload) {
         document.getElementById('edit-rating').value = upload.rating || 3;
         document.getElementById('edit-date-finished').value = upload.dateFinished || '';
     } else {
-        modalContent.innerHTML = `
-            <h3>Edit ${upload.category === 'stories' ? 'Story' : 'Thought'}</h3>
-            <label>Title:</label>
-            <input type="text" id="edit-title">
-            <label>Category:</label>
-            <select id="edit-category">
-                <option value="stories">Stories</option>
-                <option value="random-thoughts">Random Thoughts</option>
-            </select>
-            <label>Text Content:</label>
-            <textarea id="edit-fulltext" class="edit-textarea"></textarea>
-            <div class="edit-modal-buttons">
-                <button id="save-edit-btn" class="save-btn">Save Changes</button>
-                <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
-            </div>
-        `;
-        // Populate values after creation
         document.getElementById('edit-title').value = upload.title || '';
         document.getElementById('edit-category').value = upload.category || 'stories';
-        document.getElementById('edit-fulltext').value = upload.fullText || upload.preview || '';
+        const textArea = document.getElementById('edit-fulltext');
+        if (textArea) {
+            textArea.value = upload.fullText || upload.preview || '';
+        }
     }
-    
-    modal.appendChild(modalContent);
-    
-    document.body.appendChild(modal);
     
     document.getElementById('save-edit-btn').addEventListener('click', () => {
         saveEditUpload(tab, upload, modal);
