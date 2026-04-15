@@ -14,6 +14,12 @@ header {
     position: relative;
 }
 
+.subtitle {
+    font-size: 0.8rem;
+    margin: 0.5rem 0;
+    font-style: italic;
+}
+
 #admin-toggle {
     position: absolute;
     top: 1rem;
