@@ -39,7 +39,9 @@ function displayUploads(tab, uploads) {
         const item = document.createElement('div');
         item.className = 'upload-item';
         if (tab === 'reviews') {
-            item.innerHTML = `
+            // Build review details
+            const detailsDiv = document.createElement('div');
+            detailsDiv.innerHTML = `
                 <h3>${upload.title}</h3>
                 <div class="review-details">
                     <p><strong>Author:</strong> ${upload.author}</p>
@@ -49,6 +51,7 @@ function displayUploads(tab, uploads) {
                     <p><strong>Rating:</strong> <span class="rating">${'★'.repeat(upload.rating)}${'☆'.repeat(5 - upload.rating)}</span></p>
                 </div>
             `;
+            item.appendChild(detailsDiv);
             if (upload.fileUrl) {
                 const link = document.createElement('a');
                 link.href = upload.fileUrl;
