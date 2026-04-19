@@ -29,6 +29,21 @@ function displayWritingUploads(uploads) {
     displayUploads('writing-random-thoughts', randomThoughts);
 }
 
+function buildTextPreview(text, paragraphLimit = 2) {
+    if (!text) return '';
+
+    const paragraphs = text
+        .split(/\n\s*\n/)
+        .map(paragraph => paragraph.trim())
+        .filter(Boolean);
+
+    if (!paragraphs.length) {
+        return text.trim();
+    }
+
+    return paragraphs.slice(0, paragraphLimit).join('\n\n');
+}
+
 // Display uploads for a tab
 function displayUploads(tab, uploads) {
     const container = document.getElementById(tab + '-uploads');
@@ -39,6 +54,10 @@ function displayUploads(tab, uploads) {
         const item = document.createElement('div');
         item.className = 'upload-item';
         if (tab === 'reviews') {
+            const reviewText = upload.reviewBody || upload.fullText || upload.preview || '';
+            const reviewPreview = upload.reviewBody ? buildTextPreview(upload.reviewBody) : (upload.preview || '');
+            const shouldShowReviewImage = upload.type === 'image' && !upload.reviewBody;
+
             // Review title
             const title = document.createElement('h3');
             title.textContent = upload.title;
@@ -66,8 +85,8 @@ function displayUploads(tab, uploads) {
             }
 
             // Main text preview (collapsible)
-            if (upload.preview) {
-                if (upload.type === 'image') {
+            if (reviewText || shouldShowReviewImage) {
+                if (shouldShowReviewImage) {
                     const img = document.createElement('img');
                     img.src = upload.preview;
                     img.className = 'upload-image';
@@ -81,12 +100,7 @@ function displayUploads(tab, uploads) {
                     previewDiv.className = 'text-preview collapsed';
                     const previewText = document.createElement('p');
                     previewText.className = 'upload-preview';
-                    // For reviews, use upload.reviewBody for preview/full text if available
-                    if (upload.reviewBody) {
-                        previewText.textContent = upload.reviewBody.split('\n').slice(0, 2).join('\n');
-                    } else {
-                        previewText.textContent = upload.preview;
-                    }
+                    previewText.textContent = reviewPreview;
                     previewDiv.appendChild(previewText);
                     previewContainer.appendChild(previewDiv);
 
@@ -99,7 +113,7 @@ function displayUploads(tab, uploads) {
                     } else {
                         const fullText = document.createElement('p');
                         fullText.className = 'upload-preview';
-                        fullText.textContent = upload.reviewBody || upload.fullText || upload.preview;
+                        fullText.textContent = reviewText;
                         fullDiv.appendChild(fullText);
                     }
                     previewContainer.appendChild(fullDiv);
@@ -372,8 +386,8 @@ function handleUpload(event, tab) {
 }
 
 function handleReviewSubmit(event) {
-    event.preventDefault();
     const formData = new FormData(event.target);
+    const reviewBody = (formData.get('review-body') || '').trim();
     const review = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // unique ID
         title: formData.get('book-title'),
@@ -381,12 +395,14 @@ function handleReviewSubmit(event) {
         series: formData.get('series'),
         genre: formData.get('genre'),
         dateFinished: formData.get('date-finished'),
-        rating: parseInt(formData.get('rating')),
-        date: new Date().toISOString(),
-        reviewBody: formData.get('review-body')
+        rating: parseInt(formData.get('rating')) || 0,
+        reviewBody: reviewBody,
+        preview: buildTextPreview(reviewBody),
+        date: new Date().toISOString()
     };
-    // Save and display
+
     saveUpload('reviews', review);
+
     event.target.reset();
 }
 
@@ -432,6 +448,8 @@ function openEditModal(tab, upload) {
             </select>
             <label>Date Finished:</label>
             <input type="date" id="edit-date-finished">
+            <label>Review:</label>
+            <textarea id="edit-review-body" rows="8"></textarea>
             <div class="edit-modal-buttons">
                 <button id="save-edit-btn" class="save-btn">Save Changes</button>
                 <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
@@ -450,6 +468,7 @@ function openEditModal(tab, upload) {
         document.getElementById('edit-genre').value = upload.genre || '';
         document.getElementById('edit-rating').value = upload.rating || 3;
         document.getElementById('edit-date-finished').value = upload.dateFinished || '';
+        document.getElementById('edit-review-body').value = upload.reviewBody || upload.fullText || upload.preview || '';
     } else {
         document.getElementById('edit-title').value = upload.title || '';
         document.getElementById('edit-category').value = upload.category || 'stories';
@@ -493,6 +512,8 @@ function saveEditUpload(tab, upload, modal) {
             uploads[uploadIndex].genre = document.getElementById('edit-genre').value;
             uploads[uploadIndex].rating = parseInt(document.getElementById('edit-rating').value);
             uploads[uploadIndex].dateFinished = document.getElementById('edit-date-finished').value;
+            uploads[uploadIndex].reviewBody = document.getElementById('edit-review-body').value.trim();
+            uploads[uploadIndex].preview = buildTextPreview(uploads[uploadIndex].reviewBody);
         } else {
             uploads[uploadIndex].title = document.getElementById('edit-title').value;
             uploads[uploadIndex].category = document.getElementById('edit-category').value;
@@ -583,7 +604,7 @@ function deleteComment(uploadIndex, commentId, parentId) {
 
 // Event listeners
 document.getElementById('writing-form').addEventListener('submit', (e) => handleUpload(e, 'writing'));
-document.getElementById('reviews-form').addEventListener('submit', handleReviewSubmit);
+document.getElementById('reviews-form').addEventListener('submit', (e) => handleUpload(e, 'reviews'));
 
 function toggleAdminMode() {
     const isAdmin = localStorage.getItem('isAdmin') === 'true';

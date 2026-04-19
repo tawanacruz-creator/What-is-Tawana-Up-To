@@ -133,10 +133,18 @@ nav {
 }
 
 .review-form input[type="text"],
-.review-form input[type="date"] {
+.review-form input[type="date"],
+.review-form textarea {
     padding: 0.5rem;
     border: 1px solid #d4a574;
     border-radius: 4px;
+}
+
+.review-form textarea {
+    min-height: 10rem;
+    resize: vertical;
+    font: inherit;
+    line-height: 1.6;
 }
 
 .star-rating {
@@ -663,7 +671,8 @@ nav {
 }
 
 .edit-modal-content input,
-.edit-modal-content select {
+.edit-modal-content select,
+.edit-modal-content textarea {
     width: 100%;
     padding: 0.5rem;
     border: 1px solid #ddd;
@@ -673,7 +682,8 @@ nav {
 }
 
 .edit-modal-content input:focus,
-.edit-modal-content select:focus {
+.edit-modal-content select:focus,
+.edit-modal-content textarea:focus {
     outline: none;
     border-color: #800000;
     box-shadow: 0 0 3px rgba(128, 0, 0, 0.2);
@@ -737,4 +747,3 @@ nav {
     color: #5c4033;
     line-height: 1.6;
 }
-
