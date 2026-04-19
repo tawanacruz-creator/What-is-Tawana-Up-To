@@ -44,6 +44,10 @@ function buildTextPreview(text, paragraphLimit = 2) {
     return paragraphs.slice(0, paragraphLimit).join('\n\n');
 }
 
+function isAdminMode() {
+    return localStorage.getItem('isAdmin') === 'true';
+}
+
 // Display uploads for a tab
 function displayUploads(tab, uploads) {
     const container = document.getElementById(tab + '-uploads');
@@ -386,6 +390,11 @@ function handleUpload(event, tab) {
 }
 
 function handleReviewSubmit(event) {
+    if (!isAdminMode()) {
+        alert('Admin mode is required to add or modify reviews.');
+        return;
+    }
+
     const formData = new FormData(event.target);
     const reviewBody = (formData.get('review-body') || '').trim();
     const review = {
@@ -420,6 +429,11 @@ function saveUpload(tab, upload) {
 }
 
 function openEditModal(tab, upload) {
+    if ((tab === 'reviews' || tab.startsWith('reviews')) && !isAdminMode()) {
+        alert('Admin mode is required to edit reviews.');
+        return;
+    }
+
     const modal = document.createElement('div');
     modal.className = 'edit-modal';
     
@@ -506,6 +520,11 @@ function saveEditUpload(tab, upload, modal) {
     
     if (uploadIndex !== -1) {
         if (mainTab === 'reviews') {
+            if (!isAdminMode()) {
+                alert('Admin mode is required to edit reviews.');
+                return;
+            }
+
             uploads[uploadIndex].title = document.getElementById('edit-title').value;
             uploads[uploadIndex].author = document.getElementById('edit-author').value;
             uploads[uploadIndex].series = document.getElementById('edit-series').value;
@@ -551,15 +570,19 @@ function saveEditUpload(tab, upload, modal) {
 }
 
 function deleteUpload(tab, upload) {
-    if (!confirm('Are you sure you want to delete this item?')) return;
-    
     // Determine the correct key based on tab
     let key = 'writingUploads';
     let mainTab = 'writing';
     if (tab === 'reviews' || tab.startsWith('reviews')) {
+        if (!isAdminMode()) {
+            alert('Admin mode is required to delete reviews.');
+            return;
+        }
         key = 'reviewsUploads';
         mainTab = 'reviews';
     }
+
+    if (!confirm('Are you sure you want to delete this item?')) return;
     
     const uploads = JSON.parse(localStorage.getItem(key) || '[]');
     
@@ -607,7 +630,7 @@ document.getElementById('writing-form').addEventListener('submit', (e) => handle
 document.getElementById('reviews-form').addEventListener('submit', (e) => handleUpload(e, 'reviews'));
 
 function toggleAdminMode() {
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const isAdmin = isAdminMode();
     if (!isAdmin) {
         const password = prompt('Enter admin password:');
         if (password === 'ChickenSalt15') { // Simple password, change as needed
@@ -623,9 +646,11 @@ function toggleAdminMode() {
 }
 
 function checkAdminMode() {
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const isAdmin = isAdminMode();
     if (isAdmin) {
         showAdminForms();
+    } else {
+        hideAdminForms();
     }
 }
 
@@ -932,25 +957,88 @@ const complicationModifiers = [
   "when a second stranger appears"
 ];
 
-function buildPrompts(seeds, appenders, count) {
-  const result = [];
-  let seedIndex = 0;
-  let appendIndex = 0;
+const characterTwists = [
+  "while their best idea keeps making things worse",
+  "and nobody believes the part they are telling truthfully",
+  "with a secret they can no longer afford to keep",
+  "and a habit of following the wrong clue first",
+  "while trying not to become the thing they fear",
+  "with one impossible favor still unpaid",
+  "as an old enemy starts acting like a friend",
+  "while a rumor about them spreads faster than they can move",
+  "and only one person notices what they are really after",
+  "while their own past keeps interrupting the plan"
+];
 
-  while (result.length < count) {
-    result.push(`${seeds[seedIndex]} ${appenders[appendIndex]}`);
-    seedIndex = (seedIndex + 1) % seeds.length;
-    appendIndex = (appendIndex + 1) % appenders.length;
+const locationTwists = [
+  "where every doorway seems to test a different fear",
+  "and the locals treat one ordinary rule as sacred",
+  "where the weather keeps changing its mind",
+  "and something important always goes missing by morning",
+  "where every celebration hides a warning",
+  "and the silence there feels deliberate",
+  "where no map agrees with the last one",
+  "and the oldest building refuses to stay abandoned",
+  "where strangers are welcomed a little too quickly",
+  "and everybody seems to be waiting for the same sign"
+];
+
+const motiveTwists = [
+  "even if it costs them the life they have now",
+  "while pretending they want something else entirely",
+  "before the wrong person understands what is at stake",
+  "without becoming the villain in someone else's story",
+  "while carrying more guilt than they admit",
+  "before their courage runs out",
+  "without losing the one person still on their side",
+  "while their own heart keeps complicating the choice",
+  "before the chance disappears for good",
+  "even though success might change them forever"
+];
+
+const complicationTwists = [
+  "and everyone involved has a different version of the truth",
+  "just when an easy answer seems possible",
+  "and the backup plan is somehow worse",
+  "before they have time to recover from the last mistake",
+  "while nobody can agree on who caused it",
+  "and the one person who can help is already leaving",
+  "just as they begin to trust themselves again",
+  "while the crowd mistakes danger for entertainment",
+  "and the cost becomes clear too late",
+  "before the original plan can even begin"
+];
+
+function shuffleArray(items) {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
   }
 
-  return result;
+  return copy;
+}
+
+function buildPrompts(seeds, appenders, twists, count) {
+  const combinations = [];
+
+  seeds.forEach((seed) => {
+    appenders.forEach((appender) => {
+      twists.forEach((twist) => {
+        combinations.push(`${seed} ${appender}, ${twist}`);
+      });
+    });
+  });
+
+  return shuffleArray(combinations).slice(0, count);
 }
 
 const promptSets = {
-  character: buildPrompts(characterSeeds, characterModifiers, 200),
-  location: buildPrompts(locationSeeds, locationModifiers, 200),
-  motive: buildPrompts(motiveSeeds, motiveModifiers, 200),
-  complication: buildPrompts(complicationSeeds, complicationModifiers, 200)
+  character: buildPrompts(characterSeeds, characterModifiers, characterTwists, 500),
+  location: buildPrompts(locationSeeds, locationModifiers, locationTwists, 500),
+  motive: buildPrompts(motiveSeeds, motiveModifiers, motiveTwists, 500),
+  complication: buildPrompts(complicationSeeds, complicationModifiers, complicationTwists, 500)
 };
 
 let results = {};
