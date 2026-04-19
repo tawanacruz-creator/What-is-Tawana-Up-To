@@ -81,7 +81,12 @@ function displayUploads(tab, uploads) {
                     previewDiv.className = 'text-preview collapsed';
                     const previewText = document.createElement('p');
                     previewText.className = 'upload-preview';
-                    previewText.textContent = upload.preview;
+                    // For reviews, use upload.reviewBody for preview/full text if available
+                    if (upload.reviewBody) {
+                        previewText.textContent = upload.reviewBody.split('\n').slice(0, 2).join('\n');
+                    } else {
+                        previewText.textContent = upload.preview;
+                    }
                     previewDiv.appendChild(previewText);
                     previewContainer.appendChild(previewDiv);
 
@@ -89,12 +94,12 @@ function displayUploads(tab, uploads) {
                     const fullDiv = document.createElement('div');
                     fullDiv.className = 'text-full';
                     fullDiv.style.display = 'none';
-                    if (upload.html) {
+                    if (upload.html && !upload.reviewBody) {
                         fullDiv.innerHTML = upload.html;
                     } else {
                         const fullText = document.createElement('p');
                         fullText.className = 'upload-preview';
-                        fullText.textContent = upload.fullText || upload.preview;
+                        fullText.textContent = upload.reviewBody || upload.fullText || upload.preview;
                         fullDiv.appendChild(fullText);
                     }
                     previewContainer.appendChild(fullDiv);
