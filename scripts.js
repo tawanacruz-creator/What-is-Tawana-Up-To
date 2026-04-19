@@ -39,7 +39,7 @@ function displayUploads(tab, uploads) {
         const item = document.createElement('div');
         item.className = 'upload-item';
         if (tab === 'reviews') {
-            // Build review details (no main text here)
+            // Build review details (always visible)
             const detailsDiv = document.createElement('div');
             detailsDiv.innerHTML = `
                 <h3>${upload.title}</h3>
@@ -59,9 +59,8 @@ function displayUploads(tab, uploads) {
                 link.textContent = 'Download attached file';
                 item.appendChild(link);
             }
-            // Only show preview if there is main text (upload.html or upload.fullText)
+            // Show review text (collapsible preview)
             if (upload.html || upload.fullText) {
-                // Collapsible, formatted text preview for reviews
                 const previewContainer = document.createElement('div');
                 previewContainer.className = 'text-preview-container';
 
