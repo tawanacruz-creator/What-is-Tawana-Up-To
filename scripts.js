@@ -39,19 +39,24 @@ function displayUploads(tab, uploads) {
         const item = document.createElement('div');
         item.className = 'upload-item';
         if (tab === 'reviews') {
-            // Build review details (always visible)
-            const detailsDiv = document.createElement('div');
-            detailsDiv.innerHTML = `
-                <h3>${upload.title}</h3>
-                <div class="review-details">
-                    <p><strong>Author:</strong> ${upload.author}</p>
-                    <p><strong>Series:</strong> ${upload.series || 'N/A'}</p>
-                    <p><strong>Genre:</strong> ${upload.genre}</p>
-                    <p><strong>Date Finished:</strong> ${new Date(upload.dateFinished).toLocaleDateString()}</p>
-                    <p><strong>Rating:</strong> <span class="rating">${'★'.repeat(upload.rating)}${'☆'.repeat(5 - upload.rating)}</span></p>
-                </div>
+            // Review title
+            const title = document.createElement('h3');
+            title.textContent = upload.title;
+            item.appendChild(title);
+
+            // Review details
+            const details = document.createElement('div');
+            details.className = 'review-details';
+            details.innerHTML = `
+                <p><strong>Author:</strong> ${upload.author}</p>
+                <p><strong>Series:</strong> ${upload.series || 'N/A'}</p>
+                <p><strong>Genre:</strong> ${upload.genre}</p>
+                <p><strong>Date Finished:</strong> ${new Date(upload.dateFinished).toLocaleDateString()}</p>
+                <p><strong>Rating:</strong> <span class="rating">${'★'.repeat(upload.rating)}${'☆'.repeat(5 - upload.rating)}</span></p>
             `;
-            item.appendChild(detailsDiv);
+            item.appendChild(details);
+
+            // Download link if present
             if (upload.fileUrl) {
                 const link = document.createElement('a');
                 link.href = upload.fileUrl;
@@ -59,58 +64,60 @@ function displayUploads(tab, uploads) {
                 link.textContent = 'Download attached file';
                 item.appendChild(link);
             }
-            // Show review text (collapsible preview)
-            if (upload.html || upload.fullText) {
-                const previewContainer = document.createElement('div');
-                previewContainer.className = 'text-preview-container';
 
-                // Preview (first 2 lines)
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'text-preview collapsed';
-                const previewText = document.createElement('p');
-                previewText.className = 'upload-preview';
-                previewText.textContent = upload.preview;
-                previewDiv.appendChild(previewText);
-                previewContainer.appendChild(previewDiv);
-
-                // Full text (hidden by default)
-                const fullDiv = document.createElement('div');
-                fullDiv.className = 'text-full';
-                fullDiv.style.display = 'none';
-                if (upload.html) {
-                    fullDiv.innerHTML = upload.html;
+            // Main text preview (collapsible)
+            if (upload.preview) {
+                if (upload.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = upload.preview;
+                    img.className = 'upload-image';
+                    item.appendChild(img);
                 } else {
-                    const fullText = document.createElement('p');
-                    fullText.className = 'upload-preview';
-                    fullText.textContent = upload.fullText || upload.preview;
-                    fullDiv.appendChild(fullText);
-                }
-                previewContainer.appendChild(fullDiv);
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'text-preview-container';
 
-                // Expand/collapse button
-                const expandBtn = document.createElement('button');
-                expandBtn.className = 'expand-text-btn';
-                expandBtn.innerHTML = '▼ Show More';
-                expandBtn.addEventListener('click', function() {
-                    const isExpanded = fullDiv.style.display !== 'none';
-                    if (isExpanded) {
-                        fullDiv.style.display = 'none';
-                        previewDiv.classList.add('collapsed');
-                        expandBtn.innerHTML = '▼ Show More';
+                    // Preview (first 2 lines)
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'text-preview collapsed';
+                    const previewText = document.createElement('p');
+                    previewText.className = 'upload-preview';
+                    previewText.textContent = upload.preview;
+                    previewDiv.appendChild(previewText);
+                    previewContainer.appendChild(previewDiv);
+
+                    // Full text (hidden by default)
+                    const fullDiv = document.createElement('div');
+                    fullDiv.className = 'text-full';
+                    fullDiv.style.display = 'none';
+                    if (upload.html) {
+                        fullDiv.innerHTML = upload.html;
                     } else {
-                        fullDiv.style.display = 'block';
-                        previewDiv.classList.remove('collapsed');
-                        expandBtn.innerHTML = '▲ Show Less';
+                        const fullText = document.createElement('p');
+                        fullText.className = 'upload-preview';
+                        fullText.textContent = upload.fullText || upload.preview;
+                        fullDiv.appendChild(fullText);
                     }
-                });
-                previewContainer.appendChild(expandBtn);
-                item.appendChild(previewContainer);
-            }
-            if (upload.type === 'image' && upload.preview) {
-                const img = document.createElement('img');
-                img.src = upload.preview;
-                img.className = 'upload-image';
-                item.appendChild(img);
+                    previewContainer.appendChild(fullDiv);
+
+                    // Expand/collapse button
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-text-btn';
+                    expandBtn.innerHTML = '▼ Show More';
+                    expandBtn.addEventListener('click', function() {
+                        const isExpanded = fullDiv.style.display !== 'none';
+                        if (isExpanded) {
+                            fullDiv.style.display = 'none';
+                            previewDiv.classList.add('collapsed');
+                            expandBtn.innerHTML = '▼ Show More';
+                        } else {
+                            fullDiv.style.display = 'block';
+                            previewDiv.classList.remove('collapsed');
+                            expandBtn.innerHTML = '▲ Show Less';
+                        }
+                    });
+                    previewContainer.appendChild(expandBtn);
+                    item.appendChild(previewContainer);
+                }
             }
         } else {
             const link = document.createElement('a');
