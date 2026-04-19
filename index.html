@@ -71,10 +71,8 @@
                     <input type="radio" id="star1" name="rating" value="1"><label for="star1">★</label>
                 </div>
 
-                <label for="reviews-file">Upload a DOCX or JPEG file (optional):</label>
-                <input type="file" id="reviews-file" name="reviews-file" accept=".docx,.jpeg,.jpg">
-
-                <button type="submit">Add Review</button>
+                <label for="review-body">Your Review:</label>
+                <textarea id="review-body" name="review-body" rows="7" required placeholder="Write your review here..."></textarea>
             </form>
             <div id="reviews-uploads" class="uploads-list"></div>
         </div>

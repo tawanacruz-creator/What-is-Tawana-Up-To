@@ -372,6 +372,7 @@ function handleUpload(event, tab) {
 }
 
 function handleReviewSubmit(event) {
+    event.preventDefault();
     const formData = new FormData(event.target);
     const review = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // unique ID
@@ -381,48 +382,11 @@ function handleReviewSubmit(event) {
         genre: formData.get('genre'),
         dateFinished: formData.get('date-finished'),
         rating: parseInt(formData.get('rating')),
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        reviewBody: formData.get('review-body')
     };
-
-    const fileInput = event.target.querySelector('input[type="file"]');
-    const file = fileInput.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const arrayBuffer = e.target.result;
-            review.fileName = file.name;
-            review.type = file.type.startsWith('image/') ? 'image' : 'docx';
-            if (review.type === 'image') {
-                review.preview = e.target.result;
-                review.fileUrl = e.target.result;
-            } else {
-                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
-                    .then(function(result) {
-                        const html = result.value;
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = html;
-                        const text = tempDiv.textContent || tempDiv.innerText || '';
-                        const lines = text.split('\n').filter(line => line.trim());
-                        review.preview = lines.slice(0, 2).join('\n');
-                        review.fileUrl = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
-                        saveUpload('reviews', review);
-                    })
-                    .catch(function(err) {
-                        console.error('Error converting DOCX:', err);
-                        review.preview = 'Error reading file';
-                        review.fileUrl = '#';
-                        saveUpload('reviews', review);
-                    });
-            }
-            if (review.type === 'image') {
-                saveUpload('reviews', review);
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    } else {
-        saveUpload('reviews', review);
-    }
-
+    // Save and display
+    saveUpload('reviews', review);
     event.target.reset();
 }
 
@@ -619,7 +583,7 @@ function deleteComment(uploadIndex, commentId, parentId) {
 
 // Event listeners
 document.getElementById('writing-form').addEventListener('submit', (e) => handleUpload(e, 'writing'));
-document.getElementById('reviews-form').addEventListener('submit', (e) => handleUpload(e, 'reviews'));
+document.getElementById('reviews-form').addEventListener('submit', handleReviewSubmit);
 
 function toggleAdminMode() {
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
