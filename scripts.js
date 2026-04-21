@@ -1,15 +1,3 @@
-const SUPABASE_URL = 'https://whbsxgkylhvzvixvqbbf.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_7L7wBYRyZ9EJbvurMZPZPw_JbM0B4-M';
-const WRITING_BUCKET = 'writing-files';
-const SONG_ROW_ID = 1;
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-let writingEntries = [];
-let reviewEntries = [];
-let writingComments = [];
-let currentUser = null;
-
 function openTab(tabName) {
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => content.classList.remove('active'));
@@ -17,15 +5,9 @@ function openTab(tabName) {
     const tabButtons = document.querySelectorAll('.tab-button');
     tabButtons.forEach(button => button.classList.remove('active'));
 
-    const selectedTab = document.getElementById(tabName);
-    if (selectedTab) {
-        selectedTab.classList.add('active');
-    }
+    document.getElementById(tabName).classList.add('active');
 
-    const clickedButton = window.event && window.event.target;
-    if (clickedButton && clickedButton.classList.contains('tab-button')) {
-        clickedButton.classList.add('active');
-    }
+    event.target.classList.add('active');
 }
 
 function buildTextPreview(text, paragraphLimit = 2) {
@@ -43,366 +25,11 @@ function buildTextPreview(text, paragraphLimit = 2) {
     return paragraphs.slice(0, paragraphLimit).join('\n\n');
 }
 
-function escapeHtml(text) {
-    const replacements = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    };
-
-    return String(text).replace(/[&<>"']/g, character => replacements[character]);
-}
-
-function convertPlainTextToHtml(text) {
-    const paragraphs = text
-        .split(/\n\s*\n/)
-        .map(paragraph => paragraph.trim())
-        .filter(Boolean);
-
-    if (!paragraphs.length) {
-        return '<p></p>';
-    }
-
-    return paragraphs
-        .map(paragraph => `<p>${escapeHtml(paragraph).replace(/\n/g, '<br>')}</p>`)
-        .join('\n');
-}
-
-function sanitizeFileName(fileName) {
-    return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
-}
-
-function extractTrackId(value) {
-    const trimmed = value.trim();
-    const match = trimmed.match(/track\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : trimmed;
-}
-
-function isAdminMode() {
-    return Boolean(currentUser);
-}
-
-function setAuthMessage(message, type = '') {
-    const messageElement = document.getElementById('auth-message');
-    if (!messageElement) return;
-
-    messageElement.textContent = message;
-    messageElement.className = 'auth-message';
-    if (type) {
-        messageElement.classList.add(type);
-    }
-}
-
-function openAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (!modal) return;
-
-    modal.hidden = false;
-    setAuthMessage('');
-
-    const emailInput = document.getElementById('auth-email');
-    if (emailInput) {
-        emailInput.focus();
-    }
-}
-
-function closeAuthModal() {
-    const modal = document.getElementById('auth-modal');
-    if (!modal) return;
-
-    modal.hidden = true;
-    setAuthMessage('');
-
-    const form = document.getElementById('auth-form');
-    if (form) {
-        form.reset();
-    }
-}
-
-function updateAdminUI() {
-    document.querySelectorAll('.upload-form').forEach(form => {
-        form.style.display = isAdminMode() ? 'block' : 'none';
-    });
-    document.querySelectorAll('.review-form').forEach(form => {
-        form.style.display = isAdminMode() ? 'grid' : 'none';
-    });
-    document.querySelectorAll('.song-form').forEach(form => {
-        form.style.display = isAdminMode() ? 'block' : 'none';
-    });
-
-    const adminToggle = document.getElementById('admin-toggle');
-    if (adminToggle) {
-        adminToggle.textContent = isAdminMode() ? 'Log Out Admin' : 'Admin Sign In';
-    }
-}
-
-function renderEmptyState(container, message) {
-    const emptyMessage = document.createElement('p');
-    emptyMessage.className = 'empty-state';
-    emptyMessage.textContent = message;
-    container.appendChild(emptyMessage);
-}
-
-function createExpandableText(previewText, options = {}) {
-    const { fullText = '', html = '' } = options;
-    const previewContainer = document.createElement('div');
-    previewContainer.className = 'text-preview-container';
-
-    const previewDiv = document.createElement('div');
-    previewDiv.className = 'text-preview collapsed';
-    const previewParagraph = document.createElement('p');
-    previewParagraph.className = 'upload-preview';
-    previewParagraph.textContent = previewText;
-    previewDiv.appendChild(previewParagraph);
-    previewContainer.appendChild(previewDiv);
-
-    const fullDiv = document.createElement('div');
-    fullDiv.className = 'text-full';
-    fullDiv.style.display = 'none';
-
-    if (html) {
-        fullDiv.innerHTML = html;
-    } else {
-        const fullParagraph = document.createElement('p');
-        fullParagraph.className = 'upload-preview';
-        fullParagraph.textContent = fullText;
-        fullDiv.appendChild(fullParagraph);
-    }
-
-    previewContainer.appendChild(fullDiv);
-
-    const expandBtn = document.createElement('button');
-    expandBtn.type = 'button';
-    expandBtn.className = 'expand-text-btn';
-    expandBtn.textContent = '▼ Show More';
-    expandBtn.addEventListener('click', () => {
-        const isExpanded = fullDiv.style.display !== 'none';
-        fullDiv.style.display = isExpanded ? 'none' : 'block';
-        previewDiv.classList.toggle('collapsed', isExpanded);
-        expandBtn.textContent = isExpanded ? '▼ Show More' : '▲ Show Less';
-    });
-
-    previewContainer.appendChild(expandBtn);
-    return previewContainer;
-}
-
-function appendAdminActions(item, tab, upload) {
-    if (!isAdminMode()) return;
-
-    const actions = document.createElement('div');
-    actions.className = 'admin-actions';
-
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'edit-btn';
-    editBtn.textContent = 'Edit';
-    editBtn.addEventListener('click', () => openEditModal(tab, upload));
-    actions.appendChild(editBtn);
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.textContent = tab === 'reviews' ? 'Delete Review' : 'Delete Entry';
-    deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
-    actions.appendChild(deleteBtn);
-
-    item.appendChild(actions);
-}
-
-function buildCommentTree(comments) {
-    const childrenByParent = new Map();
-
-    comments.forEach(comment => {
-        const parentKey = comment.parent_id || 'root';
-        if (!childrenByParent.has(parentKey)) {
-            childrenByParent.set(parentKey, []);
-        }
-        childrenByParent.get(parentKey).push(comment);
-    });
-
-    function attachReplies(parentId) {
-        const key = parentId || 'root';
-        const children = childrenByParent.get(key) || [];
-        return children.map(comment => ({
-            ...comment,
-            replies: attachReplies(comment.id)
-        }));
-    }
-
-    return attachReplies(null);
-}
-
-function displayComments(container, comments, writingEntryId) {
-    comments.forEach(comment => {
-        const commentDiv = document.createElement('div');
-        commentDiv.className = 'comment';
-        commentDiv.setAttribute('data-comment-id', comment.id);
-
-        const text = document.createElement('p');
-        text.textContent = comment.text;
-        commentDiv.appendChild(text);
-
-        const timestamp = document.createElement('small');
-        timestamp.textContent = new Date(comment.created_at).toLocaleString();
-        commentDiv.appendChild(timestamp);
-
-        const replyBtn = document.createElement('button');
-        replyBtn.type = 'button';
-        replyBtn.className = 'reply-btn';
-        replyBtn.textContent = 'Reply';
-        replyBtn.addEventListener('click', () => showReplyForm(comment.id));
-        commentDiv.appendChild(replyBtn);
-
-        if (isAdminMode()) {
-            const deleteCommentBtn = document.createElement('button');
-            deleteCommentBtn.type = 'button';
-            deleteCommentBtn.className = 'delete-comment-btn';
-            deleteCommentBtn.textContent = 'Delete';
-            deleteCommentBtn.addEventListener('click', () => deleteComment(comment.id));
-            commentDiv.appendChild(deleteCommentBtn);
-        }
-
-        const replyForm = document.createElement('form');
-        replyForm.className = 'reply-form';
-        replyForm.style.display = 'none';
-
-        const replyTextArea = document.createElement('textarea');
-        replyTextArea.placeholder = 'Reply...';
-        replyTextArea.required = true;
-        replyForm.appendChild(replyTextArea);
-
-        const submitReplyBtn = document.createElement('button');
-        submitReplyBtn.type = 'submit';
-        submitReplyBtn.textContent = 'Reply';
-        replyForm.appendChild(submitReplyBtn);
-
-        const cancelReplyBtn = document.createElement('button');
-        cancelReplyBtn.type = 'button';
-        cancelReplyBtn.textContent = 'Cancel';
-        cancelReplyBtn.addEventListener('click', () => hideReplyForm(cancelReplyBtn));
-        replyForm.appendChild(cancelReplyBtn);
-
-        replyForm.addEventListener('submit', event => addComment(event, writingEntryId, comment.id));
-        commentDiv.appendChild(replyForm);
-
-        if (comment.replies && comment.replies.length) {
-            displayComments(commentDiv, comment.replies, writingEntryId);
-        }
-
-        container.appendChild(commentDiv);
-    });
-}
-
-function displayUploads(tab, uploads) {
-    const container = document.getElementById(`${tab}-uploads`);
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    if (!uploads.length) {
-        const emptyMessage = tab === 'reviews' ? 'No reviews yet.' : 'Nothing here yet.';
-        renderEmptyState(container, emptyMessage);
-        return;
-    }
-
-    uploads
-        .slice()
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .forEach(upload => {
-            const item = document.createElement('div');
-            item.className = 'upload-item';
-
-            if (tab === 'reviews') {
-                const title = document.createElement('h3');
-                title.textContent = upload.title;
-                item.appendChild(title);
-
-                const details = document.createElement('div');
-                details.className = 'review-details';
-                details.innerHTML = `
-                    <p><strong>Author:</strong> ${escapeHtml(upload.author || 'Unknown')}</p>
-                    <p><strong>Series:</strong> ${escapeHtml(upload.series || 'N/A')}</p>
-                    <p><strong>Genre:</strong> ${escapeHtml(upload.genre || 'Unsorted')}</p>
-                    <p><strong>Date Finished:</strong> ${upload.date_finished ? new Date(upload.date_finished).toLocaleDateString() : 'N/A'}</p>
-                    <p><strong>Rating:</strong> <span class="rating">${'★'.repeat(upload.rating || 0)}${'☆'.repeat(5 - (upload.rating || 0))}</span></p>
-                `;
-                item.appendChild(details);
-
-                const reviewBody = upload.review_body || '';
-                if (reviewBody) {
-                    item.appendChild(createExpandableText(buildTextPreview(reviewBody), {
-                        fullText: reviewBody
-                    }));
-                }
-
-                appendAdminActions(item, 'reviews', upload);
-            } else {
-                if (upload.file_url) {
-                    const link = document.createElement('a');
-                    link.href = upload.file_url;
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
-                    link.innerHTML = `<h3>${escapeHtml(upload.title)}</h3>`;
-                    item.appendChild(link);
-                } else {
-                    const title = document.createElement('h3');
-                    title.textContent = upload.title;
-                    item.appendChild(title);
-                }
-
-                if (upload.type === 'image' && upload.file_url) {
-                    const img = document.createElement('img');
-                    img.src = upload.file_url;
-                    img.alt = upload.title;
-                    img.className = 'upload-image';
-                    item.appendChild(img);
-                } else if (upload.preview || upload.full_text || upload.html) {
-                    item.appendChild(createExpandableText(upload.preview || buildTextPreview(upload.full_text || ''), {
-                        fullText: upload.full_text || upload.preview || '',
-                        html: upload.html || ''
-                    }));
-                }
-
-                const commentsSection = document.createElement('div');
-                commentsSection.className = 'comments-section';
-                const commentsTitle = document.createElement('h4');
-                commentsTitle.textContent = 'Comments';
-                commentsSection.appendChild(commentsTitle);
-
-                const comments = buildCommentTree(
-                    writingComments.filter(comment => comment.writing_entry_id === upload.id)
-                );
-
-                if (comments.length) {
-                    displayComments(commentsSection, comments, upload.id);
-                } else {
-                    renderEmptyState(commentsSection, 'No comments yet.');
-                }
-
-                const commentForm = document.createElement('form');
-                commentForm.className = 'comment-form';
-
-                const commentTextArea = document.createElement('textarea');
-                commentTextArea.placeholder = 'Add a comment...';
-                commentTextArea.required = true;
-                commentForm.appendChild(commentTextArea);
-
-                const commentButton = document.createElement('button');
-                commentButton.type = 'submit';
-                commentButton.textContent = 'Post Comment';
-                commentForm.appendChild(commentButton);
-
-                commentForm.addEventListener('submit', event => addComment(event, upload.id, null));
-                commentsSection.appendChild(commentForm);
-                item.appendChild(commentsSection);
-
-                appendAdminActions(item, 'writing', upload);
-            }
-
-            container.appendChild(item);
-        });
+function loadUploads() {
+    const writingUploads = JSON.parse(localStorage.getItem('writingUploads') || '[]');
+    const reviewsUploads = JSON.parse(localStorage.getItem('reviewsUploads') || '[]');
+    displayWritingUploads(writingUploads);
+    displayUploads('reviews', reviewsUploads);
 }
 
 function displayWritingUploads(uploads) {
@@ -412,252 +39,376 @@ function displayWritingUploads(uploads) {
     displayUploads('writing-random-thoughts', randomThoughts);
 }
 
+function isAdminMode() {
+    return localStorage.getItem('isAdmin') === 'true';
+}
+
+function displayUploads(tab, uploads) {
+    const container = document.getElementById(tab + '-uploads');
+    if (!container) return;
+    container.innerHTML = '';
+    uploads.sort((a, b) => new Date(b.date) - new Date(a.date));
+    uploads.forEach((upload, index) => {
+        const item = document.createElement('div');
+        item.className = 'upload-item';
+        if (tab === 'reviews') {
+            const reviewText = upload.reviewBody || upload.fullText || upload.preview || '';
+            const reviewPreview = upload.reviewBody ? buildTextPreview(upload.reviewBody) : (upload.preview || '');
+            const shouldShowReviewImage = upload.type === 'image' && !upload.reviewBody;
+
+            const title = document.createElement('h3');
+            title.textContent = upload.title;
+            item.appendChild(title);
+
+            const details = document.createElement('div');
+            details.className = 'review-details';
+            details.innerHTML = `
+                <p><strong>Author:</strong> ${upload.author}</p>
+                <p><strong>Series:</strong> ${upload.series || 'N/A'}</p>
+                <p><strong>Genre:</strong> ${upload.genre}</p>
+                <p><strong>Date Finished:</strong> ${new Date(upload.dateFinished).toLocaleDateString()}</p>
+                <p><strong>Rating:</strong> <span class="rating">${'★'.repeat(upload.rating)}${'☆'.repeat(5 - upload.rating)}</span></p>
+            `;
+            item.appendChild(details);
+
+            if (upload.fileUrl) {
+                const link = document.createElement('a');
+                link.href = upload.fileUrl;
+                link.download = upload.fileName || 'review-file';
+                link.textContent = 'Download attached file';
+                item.appendChild(link);
+            }
+
+            if (reviewText || shouldShowReviewImage) {
+                if (shouldShowReviewImage) {
+                    const img = document.createElement('img');
+                    img.src = upload.preview;
+                    img.className = 'upload-image';
+                    item.appendChild(img);
+                } else {
+                    const previewContainer = document.createElement('div');
+                    previewContainer.className = 'text-preview-container';
+
+                    const previewDiv = document.createElement('div');
+                    previewDiv.className = 'text-preview collapsed';
+                    const previewText = document.createElement('p');
+                    previewText.className = 'upload-preview';
+                    previewText.textContent = reviewPreview;
+                    previewDiv.appendChild(previewText);
+                    previewContainer.appendChild(previewDiv);
+
+                    const fullDiv = document.createElement('div');
+                    fullDiv.className = 'text-full';
+                    fullDiv.style.display = 'none';
+                    if (upload.html && !upload.reviewBody) {
+                        fullDiv.innerHTML = upload.html;
+                    } else {
+                        const fullText = document.createElement('p');
+                        fullText.className = 'upload-preview';
+                        fullText.textContent = reviewText;
+                        fullDiv.appendChild(fullText);
+                    }
+                    previewContainer.appendChild(fullDiv);
+
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-text-btn';
+                    expandBtn.innerHTML = '▼ Show More';
+                    expandBtn.addEventListener('click', function() {
+                        const isExpanded = fullDiv.style.display !== 'none';
+                        if (isExpanded) {
+                            fullDiv.style.display = 'none';
+                            previewDiv.classList.add('collapsed');
+                            expandBtn.innerHTML = '▼ Show More';
+                        } else {
+                            fullDiv.style.display = 'block';
+                            previewDiv.classList.remove('collapsed');
+                            expandBtn.innerHTML = '▲ Show Less';
+                        }
+                    });
+                    previewContainer.appendChild(expandBtn);
+                    item.appendChild(previewContainer);
+                }
+            }
+        } else {
+            const link = document.createElement('a');
+            link.href = upload.url;
+            link.download = upload.title;
+            link.innerHTML = `<h3>${upload.title}</h3>`;
+            item.appendChild(link);
+            if (upload.type === 'image') {
+                const img = document.createElement('img');
+                img.src = upload.preview;
+                img.className = 'upload-image';
+                item.appendChild(img);
+            } else {
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'text-preview-container';
+
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'text-preview collapsed';
+                const previewText = document.createElement('p');
+                previewText.className = 'upload-preview';
+                previewText.textContent = upload.preview;
+                previewDiv.appendChild(previewText);
+                previewContainer.appendChild(previewDiv);
+
+                const fullDiv = document.createElement('div');
+                fullDiv.className = 'text-full';
+                fullDiv.style.display = 'none';
+                if (upload.html) {
+                    fullDiv.className = 'text-full';
+                    fullDiv.innerHTML = upload.html;
+                } else {
+                    const fullText = document.createElement('p');
+                    fullText.className = 'upload-preview';
+                    fullText.textContent = upload.fullText || upload.preview;
+                    fullDiv.appendChild(fullText);
+                }
+                previewContainer.appendChild(fullDiv);
+
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-text-btn';
+                expandBtn.innerHTML = '▼ Show More';
+                expandBtn.addEventListener('click', function() {
+                    const isExpanded = fullDiv.style.display !== 'none';
+                    if (isExpanded) {
+                        fullDiv.style.display = 'none';
+                        previewDiv.classList.add('collapsed');
+                        expandBtn.innerHTML = '▼ Show More';
+                    } else {
+                        fullDiv.style.display = 'block';
+                        previewDiv.classList.remove('collapsed');
+                        expandBtn.innerHTML = '▲ Show Less';
+                    }
+                });
+                previewContainer.appendChild(expandBtn);
+                item.appendChild(previewContainer);
+            }
+
+            const commentsDiv = document.createElement('div');
+            commentsDiv.className = 'comments-section';
+            commentsDiv.innerHTML = '<h4>Comments</h4>';
+            displayComments(commentsDiv, upload.comments || [], index, null);
+            const commentForm = document.createElement('form');
+            commentForm.className = 'comment-form';
+            commentForm.innerHTML = `
+                <textarea placeholder="Add a comment..." required></textarea>
+                <button type="submit">Post Comment</button>
+            `;
+            commentForm.addEventListener('submit', (e) => addComment(e, index, null));
+            commentsDiv.appendChild(commentForm);
+            item.appendChild(commentsDiv);
+        }
+        if (localStorage.getItem('isAdmin') === 'true') {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = 'Delete File';
+            deleteBtn.addEventListener('click', () => deleteUpload(tab, upload));
+            item.appendChild(deleteBtn);
+        }
+        container.appendChild(item);
+    });
+}
+
 function showReplyForm(commentId) {
     const replyForms = document.querySelectorAll('.reply-form');
-    replyForms.forEach(form => {
-        form.style.display = 'none';
-    });
-
+    replyForms.forEach(form => form.style.display = 'none');
     const targetComment = document.querySelector(`[data-comment-id="${commentId}"]`);
-    if (!targetComment) return;
-
-    const replyForm = targetComment.querySelector('.reply-form');
-    if (replyForm) {
-        replyForm.style.display = 'block';
+    if (targetComment) {
+        const replyForm = targetComment.querySelector('.reply-form');
+        if (replyForm) {
+            replyForm.style.display = 'block';
+        }
     }
 }
 
 function hideReplyForm(button) {
-    const form = button.closest('.reply-form');
-    if (form) {
-        form.style.display = 'none';
-    }
+    button.parentElement.style.display = 'none';
 }
 
-async function loadContent() {
-    const [writingResponse, reviewsResponse, commentsResponse] = await Promise.all([
-        supabaseClient.from('writing_entries').select('*').order('created_at', { ascending: false }),
-        supabaseClient.from('reviews').select('*').order('created_at', { ascending: false }),
-        supabaseClient.from('writing_comments').select('*').order('created_at', { ascending: true })
-    ]);
+function displayComments(container, comments, uploadIndex, parentId) {
+    comments.forEach((comment, commentIndex) => {
+        const commentDiv = document.createElement('div');
+        commentDiv.className = 'comment';
+        commentDiv.setAttribute('data-comment-id', comment.id);
+        commentDiv.innerHTML = `
+            <p>${comment.text}</p>
+            <small>${new Date(comment.date).toLocaleString()}</small>
+            <button class="reply-btn" onclick="showReplyForm('${comment.id}')">Reply</button>
+        `;
 
-    const errors = [writingResponse.error, reviewsResponse.error, commentsResponse.error].filter(Boolean);
-    if (errors.length) {
-        console.error('Error loading content from Supabase:', errors);
-    }
+        if (localStorage.getItem('isAdmin') === 'true') {
+            const deleteCommentBtn = document.createElement('button');
+            deleteCommentBtn.className = 'delete-comment-btn';
+            deleteCommentBtn.textContent = 'Delete';
+            deleteCommentBtn.addEventListener('click', () => deleteComment(uploadIndex, comment.id, parentId));
+            commentDiv.appendChild(deleteCommentBtn);
+        }
 
-    writingEntries = writingResponse.data || [];
-    reviewEntries = reviewsResponse.data || [];
-    writingComments = commentsResponse.data || [];
-
-    displayWritingUploads(writingEntries);
-    displayUploads('reviews', reviewEntries);
+        const replyForm = document.createElement('form');
+        replyForm.className = 'reply-form';
+        replyForm.style.display = 'none';
+        replyForm.innerHTML = `
+            <textarea placeholder="Reply..." required></textarea>
+            <button type="submit">Reply</button>
+            <button type="button" onclick="hideReplyForm(this)">Cancel</button>
+        `;
+        replyForm.addEventListener('submit', (e) => addComment(e, uploadIndex, comment.id));
+        commentDiv.appendChild(replyForm);
+        if (comment.replies) {
+            displayComments(commentDiv, comment.replies, uploadIndex, comment.id);
+        }
+        container.appendChild(commentDiv);
+    });
 }
 
-async function parseWritingFile(file) {
-    const isImage = file.type.startsWith('image/');
-    if (isImage) {
-        return {
-            type: 'image',
-            html: null,
-            fullText: null,
-            preview: null
+function addComment(event, uploadIndex, parentId) {
+    event.preventDefault();
+    const textarea = event.target.querySelector('textarea');
+    const text = textarea.value.trim();
+    if (!text) return;
+    const comment = {
+        id: Date.now().toString(),
+        text: text,
+        date: new Date().toISOString()
+    };
+    const uploads = JSON.parse(localStorage.getItem('writingUploads') || '[]');
+    if (parentId) {
+        function addReply(comments) {
+            for (let c of comments) {
+                if (c.id === parentId) {
+                    if (!c.replies) c.replies = [];
+                    c.replies.push(comment);
+                    return true;
+                }
+                if (c.replies && addReply(c.replies)) return true;
+            }
+            return false;
+        }
+        addReply(uploads[uploadIndex].comments || []);
+    } else {
+        if (!uploads[uploadIndex].comments) uploads[uploadIndex].comments = [];
+        uploads[uploadIndex].comments.push(comment);
+    }
+    localStorage.setItem('writingUploads', JSON.stringify(uploads));
+    displayWritingUploads(uploads);
+}
+
+function handleUpload(event, tab) {
+    event.preventDefault();
+    if (tab === 'reviews') {
+        handleReviewSubmit(event);
+    } else {
+        const fileInput = event.target.querySelector('input[type="file"]');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const categoryInput = document.getElementById('writing-category');
+        const category = categoryInput ? categoryInput.value : 'stories';
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const arrayBuffer = e.target.result;
+            const upload = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+                title: file.name,
+                date: new Date().toISOString(),
+                category: category,
+                type: file.type.startsWith('image/') ? 'image' : 'docx'
+            };
+
+            if (upload.type === 'image') {
+                upload.preview = e.target.result;
+                upload.url = e.target.result;
+                saveUpload(tab, upload);
+            } else {
+                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
+                    .then(function(result) {
+                        const html = result.value;
+                        upload.html = html;
+
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+
+                        const paragraphs = tempDiv.querySelectorAll('p');
+                        const textLines = [];
+                        paragraphs.forEach(p => {
+                            const text = p.textContent;
+                            if (text.trim()) {
+                                textLines.push(text);
+                            }
+                        });
+
+                        const fullText = textLines.join('\n\n');
+                        upload.fullText = fullText;
+                        upload.preview = textLines.slice(0, 2).join('\n\n');
+                        upload.url = 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
+                        saveUpload(tab, upload);
+                    })
+                    .catch(function(err) {
+                        console.error('Error converting DOCX:', err);
+                        upload.preview = 'Error reading file';
+                        upload.html = '<p>Error reading file</p>';
+                        upload.url = '#';
+                        saveUpload(tab, upload);
+                    });
+            }
         };
+        reader.readAsArrayBuffer(file);
+        fileInput.value = '';
     }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
-    const html = result.value;
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-
-    const paragraphs = Array.from(tempDiv.querySelectorAll('p'))
-        .map(paragraph => paragraph.textContent || '')
-        .filter(text => text.trim());
-
-    const fullText = paragraphs.length
-        ? paragraphs.join('\n\n')
-        : (tempDiv.textContent || '').trim();
-
-    return {
-        type: 'docx',
-        html,
-        fullText,
-        preview: buildTextPreview(fullText)
-    };
 }
 
-async function handleWritingSubmit(event) {
-    if (!isAdminMode()) {
-        alert('Admin mode is required to upload writing.');
-        return;
-    }
-
-    const fileInput = document.getElementById('writing-file');
-    const file = fileInput ? fileInput.files[0] : null;
-    if (!file) {
-        alert('Choose a file to upload first.');
-        return;
-    }
-
-    const categoryInput = document.getElementById('writing-category');
-    const category = categoryInput ? categoryInput.value : 'stories';
-
-    let parsedFile;
-    try {
-        parsedFile = await parseWritingFile(file);
-    } catch (error) {
-        console.error('Error reading writing file:', error);
-        alert('That file could not be read. Please try a DOCX or image file.');
-        return;
-    }
-
-    const filePath = `${Date.now()}-${sanitizeFileName(file.name)}`;
-    const { error: uploadError } = await supabaseClient.storage
-        .from(WRITING_BUCKET)
-        .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: file.type || undefined
-        });
-
-    if (uploadError) {
-        console.error('Error uploading writing file:', uploadError);
-        alert(`Upload failed: ${uploadError.message}`);
-        return;
-    }
-
-    const { data: publicUrlData } = supabaseClient.storage
-        .from(WRITING_BUCKET)
-        .getPublicUrl(filePath);
-
-    const entry = {
-        title: file.name,
-        category,
-        type: parsedFile.type,
-        file_name: file.name,
-        file_path: filePath,
-        file_url: publicUrlData.publicUrl,
-        preview: parsedFile.type === 'image' ? publicUrlData.publicUrl : parsedFile.preview,
-        full_text: parsedFile.fullText,
-        html: parsedFile.html
-    };
-
-    const { error: insertError } = await supabaseClient.from('writing_entries').insert(entry);
-    if (insertError) {
-        console.error('Error saving writing entry:', insertError);
-        await supabaseClient.storage.from(WRITING_BUCKET).remove([filePath]);
-        alert(`Saving failed: ${insertError.message}`);
-        return;
-    }
-
-    event.target.reset();
-    await loadContent();
-}
-
-async function handleReviewSubmit(event) {
+function handleReviewSubmit(event) {
     if (!isAdminMode()) {
         alert('Admin mode is required to add or modify reviews.');
         return;
     }
 
     const formData = new FormData(event.target);
-    const reviewBody = (formData.get('review-body') || '').trim();
-
     const review = {
-        title: (formData.get('book-title') || '').trim(),
-        author: (formData.get('author') || '').trim(),
-        series: (formData.get('series') || '').trim(),
-        genre: (formData.get('genre') || '').trim(),
-        date_finished: formData.get('date-finished'),
-        rating: parseInt(formData.get('rating'), 10) || 0,
-        review_body: reviewBody
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        title: formData.get('book-title'),
+        author: formData.get('author'),
+        series: formData.get('series'),
+        genre: formData.get('genre'),
+        dateFinished: formData.get('date-finished'),
+        rating: parseInt(formData.get('rating')) || 0,
+        reviewBody: (formData.get('review-body') || '').trim(),
+        preview: buildTextPreview((formData.get('review-body') || '').trim()),
+        date: new Date().toISOString()
     };
 
-    const { error } = await supabaseClient.from('reviews').insert(review);
-    if (error) {
-        console.error('Error saving review:', error);
-        alert(`Review could not be saved: ${error.message}`);
-        return;
-    }
-
+    saveUpload('reviews', review);
     event.target.reset();
-    await loadContent();
 }
 
-async function addComment(event, writingEntryId, parentId) {
-    event.preventDefault();
+function saveUpload(tab, upload) {
+    const key = tab + 'Uploads';
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    uploads.push(upload);
+    localStorage.setItem(key, JSON.stringify(uploads));
+    if (tab === 'writing') {
+        displayWritingUploads(uploads);
+    } else {
+        displayUploads(tab, uploads);
+    }
+}
 
-    const textarea = event.target.querySelector('textarea');
-    const text = textarea ? textarea.value.trim() : '';
-    if (!text) return;
-
-    const { error } = await supabaseClient.from('writing_comments').insert({
-        writing_entry_id: writingEntryId,
-        parent_id: parentId,
-        text
-    });
-
-    if (error) {
-        console.error('Error saving comment:', error);
-        alert(`Comment could not be saved: ${error.message}`);
+function openEditModal(tab, upload) {
+    if ((tab === 'reviews' || tab.startsWith('reviews')) && !isAdminMode()) {
+        alert('Admin mode is required to edit reviews.');
         return;
     }
 
-    event.target.reset();
-    await loadContent();
-}
+    const modal = document.createElement('div');
+    modal.className = 'edit-modal';
 
-async function deleteComment(commentId) {
-    if (!isAdminMode()) {
-        alert('Admin mode is required to delete comments.');
-        return;
-    }
+    const modalContent = document.createElement('div');
+    modalContent.className = 'edit-modal-content';
 
-    if (!confirm('Are you sure you want to delete this comment?')) return;
-
-    const { error } = await supabaseClient.from('writing_comments').delete().eq('id', commentId);
-    if (error) {
-        console.error('Error deleting comment:', error);
-        alert(`Comment could not be deleted: ${error.message}`);
-        return;
-    }
-
-    await loadContent();
-}
-
-function handleUpload(event, tab) {
-    event.preventDefault();
-
-    if (tab === 'reviews') {
-        handleReviewSubmit(event);
-        return;
-    }
-
-    handleWritingSubmit(event);
-}
-
-async function handleAdminSignIn(event) {
-    event.preventDefault();
-
-    const email = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-
-    setAuthMessage('Signing in...');
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        console.error('Error signing in:', error);
-        setAuthMessage(error.message, 'error');
-        return;
-    }
-
-    setAuthMessage('Signed in successfully.', 'success');
-}
-
-function createEditModalContent(tab, upload) {
-    if (tab === 'reviews') {
-        return `
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        modalContent.innerHTML = `
             <h3>Edit Review</h3>
             <label>Book Title:</label>
             <input type="text" id="edit-title">
@@ -680,67 +431,29 @@ function createEditModalContent(tab, upload) {
             <label>Review:</label>
             <textarea id="edit-review-body" rows="8"></textarea>
             <div class="edit-modal-buttons">
-                <button id="save-edit-btn" class="save-btn" type="button">Save Changes</button>
-                <button id="cancel-edit-btn" class="cancel-btn" type="button">Cancel</button>
+                <button id="save-edit-btn" class="save-btn">Save Changes</button>
+                <button id="cancel-edit-btn" class="cancel-btn">Cancel</button>
             </div>
         `;
     }
 
-    const textEditor = upload.type === 'image'
-        ? ''
-        : `
-            <label>Displayed Text:</label>
-            <textarea id="edit-fulltext" rows="12">${escapeHtml(upload.full_text || '')}</textarea>
-            <p>This updates the text shown on the site. The original uploaded file stays the same.</p>
-        `;
-
-    return `
-        <h3>Edit Writing Entry</h3>
-        <label>Title:</label>
-        <input type="text" id="edit-title">
-        <label>Section:</label>
-        <select id="edit-category">
-            <option value="stories">Stories</option>
-            <option value="random-thoughts">Random Thoughts</option>
-        </select>
-        ${textEditor}
-        <div class="edit-modal-buttons">
-            <button id="save-edit-btn" class="save-btn" type="button">Save Changes</button>
-            <button id="cancel-edit-btn" class="cancel-btn" type="button">Cancel</button>
-        </div>
-    `;
-}
-
-function openEditModal(tab, upload) {
-    if (!isAdminMode()) {
-        alert('Admin mode is required to edit content.');
-        return;
-    }
-
-    const modal = document.createElement('div');
-    modal.className = 'edit-modal';
-
-    const modalContent = document.createElement('div');
-    modalContent.className = 'edit-modal-content';
-    modalContent.innerHTML = createEditModalContent(tab, upload);
-
     modal.appendChild(modalContent);
     document.body.appendChild(modal);
 
-    document.getElementById('edit-title').value = upload.title || '';
-
-    if (tab === 'reviews') {
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        document.getElementById('edit-title').value = upload.title || '';
         document.getElementById('edit-author').value = upload.author || '';
         document.getElementById('edit-series').value = upload.series || '';
         document.getElementById('edit-genre').value = upload.genre || '';
         document.getElementById('edit-rating').value = upload.rating || 3;
-        document.getElementById('edit-date-finished').value = upload.date_finished || '';
-        document.getElementById('edit-review-body').value = upload.review_body || '';
+        document.getElementById('edit-date-finished').value = upload.dateFinished || '';
+        document.getElementById('edit-review-body').value = upload.reviewBody || upload.fullText || upload.preview || '';
     } else {
+        document.getElementById('edit-title').value = upload.title || '';
         document.getElementById('edit-category').value = upload.category || 'stories';
         const textArea = document.getElementById('edit-fulltext');
         if (textArea) {
-            textArea.value = upload.full_text || '';
+            textArea.value = upload.fullText || upload.preview || '';
         }
     }
 
@@ -750,171 +463,229 @@ function openEditModal(tab, upload) {
     document.getElementById('cancel-edit-btn').addEventListener('click', () => {
         modal.remove();
     });
-    modal.addEventListener('click', event => {
-        if (event.target === modal) {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
             modal.remove();
         }
     });
 }
 
-async function saveEditUpload(tab, upload, modal) {
+function saveEditUpload(tab, upload, modal) {
     if (!isAdminMode()) {
-        alert('Admin mode is required to edit content.');
+        alert('Admin mode is required to edit reviews.');
         return;
     }
 
-    if (tab === 'reviews') {
-        const updates = {
-            title: document.getElementById('edit-title').value.trim(),
-            author: document.getElementById('edit-author').value.trim(),
-            series: document.getElementById('edit-series').value.trim(),
-            genre: document.getElementById('edit-genre').value.trim(),
-            rating: parseInt(document.getElementById('edit-rating').value, 10) || 0,
-            date_finished: document.getElementById('edit-date-finished').value,
-            review_body: document.getElementById('edit-review-body').value.trim()
-        };
-
-        const { error } = await supabaseClient.from('reviews').update(updates).eq('id', upload.id);
-        if (error) {
-            console.error('Error updating review:', error);
-            alert(`Review could not be updated: ${error.message}`);
-            return;
-        }
-    } else {
-        const updates = {
-            title: document.getElementById('edit-title').value.trim(),
-            category: document.getElementById('edit-category').value
-        };
-
-        const textArea = document.getElementById('edit-fulltext');
-        if (textArea) {
-            const newText = textArea.value.trim();
-            updates.full_text = newText;
-            updates.preview = buildTextPreview(newText);
-            updates.html = convertPlainTextToHtml(newText);
-        }
-
-        const { error } = await supabaseClient.from('writing_entries').update(updates).eq('id', upload.id);
-        if (error) {
-            console.error('Error updating writing entry:', error);
-            alert(`Writing entry could not be updated: ${error.message}`);
-            return;
-        }
+    let key = 'writingUploads';
+    let mainTab = 'writing';
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        key = 'reviewsUploads';
+        mainTab = 'reviews';
     }
 
-    modal.remove();
-    await loadContent();
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    const uploadIndex = uploads.findIndex(item => item.id === upload.id);
+
+    if (uploadIndex !== -1) {
+        if (mainTab === 'reviews') {
+            uploads[uploadIndex].title = document.getElementById('edit-title').value;
+            uploads[uploadIndex].author = document.getElementById('edit-author').value;
+            uploads[uploadIndex].series = document.getElementById('edit-series').value;
+            uploads[uploadIndex].genre = document.getElementById('edit-genre').value;
+            uploads[uploadIndex].rating = parseInt(document.getElementById('edit-rating').value);
+            uploads[uploadIndex].dateFinished = document.getElementById('edit-date-finished').value;
+            uploads[uploadIndex].reviewBody = document.getElementById('edit-review-body').value.trim();
+            uploads[uploadIndex].preview = buildTextPreview(uploads[uploadIndex].reviewBody);
+        } else {
+            uploads[uploadIndex].title = document.getElementById('edit-title').value;
+            uploads[uploadIndex].category = document.getElementById('edit-category').value;
+
+            const textArea = document.getElementById('edit-fulltext');
+            if (textArea) {
+                const newText = textArea.value;
+                uploads[uploadIndex].fullText = newText;
+                const paragraphs = newText.split('\n\n').filter(p => p.trim());
+                const htmlContent = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('\n');
+                uploads[uploadIndex].html = htmlContent;
+                uploads[uploadIndex].preview = paragraphs.slice(0, 2).join('\n\n');
+                uploads[uploadIndex].url = 'data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent);
+            }
+        }
+
+        localStorage.setItem(key, JSON.stringify(uploads));
+
+        if (mainTab === 'writing') {
+            displayWritingUploads(uploads);
+        } else {
+            displayUploads(mainTab, uploads);
+        }
+
+        modal.remove();
+        alert('Changes saved!');
+    }
 }
 
-async function deleteUpload(tab, upload) {
-    if (!isAdminMode()) {
-        alert('Admin mode is required to delete content.');
-        return;
+function deleteUpload(tab, upload) {
+    let key = 'writingUploads';
+    let mainTab = 'writing';
+    if (tab === 'reviews' || tab.startsWith('reviews')) {
+        if (!isAdminMode()) {
+            alert('Admin mode is required to delete reviews.');
+            return;
+        }
+        key = 'reviewsUploads';
+        mainTab = 'reviews';
     }
 
     if (!confirm('Are you sure you want to delete this item?')) return;
 
-    if (tab === 'reviews') {
-        const { error } = await supabaseClient.from('reviews').delete().eq('id', upload.id);
-        if (error) {
-            console.error('Error deleting review:', error);
-            alert(`Review could not be deleted: ${error.message}`);
-            return;
-        }
-    } else {
-        const { error } = await supabaseClient.from('writing_entries').delete().eq('id', upload.id);
-        if (error) {
-            console.error('Error deleting writing entry:', error);
-            alert(`Writing entry could not be deleted: ${error.message}`);
-            return;
-        }
+    const uploads = JSON.parse(localStorage.getItem(key) || '[]');
+    const indexToDelete = uploads.findIndex(item => item.id === upload.id);
+    if (indexToDelete !== -1) {
+        uploads.splice(indexToDelete, 1);
+        localStorage.setItem(key, JSON.stringify(uploads));
 
-        if (upload.file_path) {
-            const { error: storageError } = await supabaseClient.storage
-                .from(WRITING_BUCKET)
-                .remove([upload.file_path]);
-            if (storageError) {
-                console.error('Error deleting file from storage:', storageError);
+        if (mainTab === 'writing') {
+            displayWritingUploads(uploads);
+        } else {
+            displayUploads(mainTab, uploads);
+        }
+    }
+}
+
+function deleteComment(uploadIndex, commentId, parentId) {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+
+    const uploads = JSON.parse(localStorage.getItem('writingUploads') || '[]');
+    const upload = uploads[uploadIndex];
+
+    if (!upload || !upload.comments) return;
+
+    function removeComment(comments) {
+        for (let i = 0; i < comments.length; i++) {
+            if (comments[i].id === commentId) {
+                comments.splice(i, 1);
+                return true;
+            }
+            if (comments[i].replies && removeComment(comments[i].replies)) {
+                return true;
             }
         }
+        return false;
     }
 
-    await loadContent();
+    removeComment(upload.comments);
+    localStorage.setItem('writingUploads', JSON.stringify(uploads));
+    displayWritingUploads(uploads);
 }
 
-async function toggleAdminMode() {
-    if (isAdminMode()) {
-        const { error } = await supabaseClient.auth.signOut();
-        if (error) {
-            console.error('Error signing out:', error);
-            alert(`Could not sign out: ${error.message}`);
+document.getElementById('writing-form').addEventListener('submit', (e) => handleUpload(e, 'writing'));
+document.getElementById('reviews-form').addEventListener('submit', (e) => handleUpload(e, 'reviews'));
+
+function toggleAdminMode() {
+    const isAdmin = isAdminMode();
+    if (!isAdmin) {
+        const password = prompt('Enter admin password:');
+        if (password === 'ChickenSalt15') {
+            localStorage.setItem('isAdmin', 'true');
+            showAdminForms();
+        } else {
+            alert('Incorrect password');
         }
-        return;
+    } else {
+        localStorage.removeItem('isAdmin');
+        hideAdminForms();
     }
-
-    openAuthModal();
 }
 
-async function handleSongEmbed(event) {
-    event.preventDefault();
-
-    if (!isAdminMode()) {
-        alert('Admin mode is required to update the song of the day.');
-        return;
+function checkAdminMode() {
+    const isAdmin = isAdminMode();
+    if (isAdmin) {
+        showAdminForms();
+    } else {
+        hideAdminForms();
     }
+}
 
+function showAdminForms() {
+    document.querySelectorAll('.upload-form').forEach(form => {
+        form.style.display = 'block';
+    });
+    document.querySelectorAll('.review-form').forEach(form => {
+        form.style.display = 'grid';
+    });
+    document.querySelectorAll('.song-form').forEach(form => {
+        form.style.display = 'block';
+    });
+    document.getElementById('admin-toggle').textContent = 'Exit Admin Mode';
+    loadUploads();
+}
+
+function hideAdminForms() {
+    document.querySelectorAll('.upload-form, .review-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    document.querySelectorAll('.song-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    document.getElementById('admin-toggle').textContent = 'Admin Mode';
+    loadUploads();
+}
+
+window.addEventListener('load', function() {
+    loadUploads();
+    checkAdminMode();
+    initializePromptGenerator();
+    initializeSongOfTheDay();
+});
+
+function initializeSongOfTheDay() {
+    const songForm = document.getElementById('song-form');
+    if (songForm) {
+        songForm.addEventListener('submit', handleSongEmbed);
+    }
+    loadSongOfTheDay();
+}
+
+function handleSongEmbed(e) {
+    e.preventDefault();
     const input = document.getElementById('song-embed');
     const value = input.value.trim();
     if (!value) return;
 
-    const trackId = extractTrackId(value);
-    const { error } = await supabaseClient.from('song_of_the_day').upsert({
-        id: SONG_ROW_ID,
-        track_id: trackId,
-        updated_at: new Date().toISOString()
-    }, {
-        onConflict: 'id'
-    });
-
-    if (error) {
-        console.error('Error saving song of the day:', error);
-        alert(`Song could not be updated: ${error.message}`);
-        return;
+    let trackId = value;
+    const match = value.match(/track\/([a-zA-Z0-9]+)/);
+    if (match) {
+        trackId = match[1];
     }
 
+    const songData = {
+        trackId: trackId,
+        date: new Date().toISOString()
+    };
+
+    localStorage.setItem('songOfTheDay', JSON.stringify(songData));
+    displaySongOfTheDay(songData);
     input.value = '';
-    await loadSongOfTheDay();
 }
 
-async function loadSongOfTheDay() {
-    const display = document.getElementById('song-display');
-    if (!display) return;
-
-    const { data, error } = await supabaseClient
-        .from('song_of_the_day')
-        .select('*')
-        .eq('id', SONG_ROW_ID)
-        .maybeSingle();
-
-    if (error) {
-        console.error('Error loading song of the day:', error);
-        display.innerHTML = '<p>Song data is not available yet.</p>';
-        return;
+function loadSongOfTheDay() {
+    const songData = localStorage.getItem('songOfTheDay');
+    if (songData) {
+        displaySongOfTheDay(JSON.parse(songData));
+    } else {
+        const display = document.getElementById('song-display');
+        if (display) {
+            display.innerHTML = '<p>No song embedded yet.</p>';
+        }
     }
-
-    if (!data || !data.track_id) {
-        display.innerHTML = '<p>No song embedded yet.</p>';
-        return;
-    }
-
-    displaySongOfTheDay(data);
 }
 
 function displaySongOfTheDay(songData) {
     const display = document.getElementById('song-display');
     if (!display) return;
 
-    const embedUrl = `https://open.spotify.com/embed/track/${songData.track_id}`;
+    const embedUrl = `https://open.spotify.com/embed/track/${songData.trackId}`;
     display.innerHTML = `
         <iframe src="${embedUrl}" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     `;
@@ -923,53 +694,6 @@ function displaySongOfTheDay(songData) {
         window.Spotify.Embed.reload();
     }
 }
-
-function bindAppEventListeners() {
-    document.getElementById('writing-form').addEventListener('submit', event => handleUpload(event, 'writing'));
-    document.getElementById('reviews-form').addEventListener('submit', event => handleUpload(event, 'reviews'));
-    document.getElementById('song-form').addEventListener('submit', handleSongEmbed);
-    document.getElementById('auth-form').addEventListener('submit', handleAdminSignIn);
-    document.getElementById('auth-close').addEventListener('click', closeAuthModal);
-
-    const authModal = document.getElementById('auth-modal');
-    authModal.addEventListener('click', event => {
-        if (event.target === authModal) {
-            closeAuthModal();
-        }
-    });
-
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') {
-            closeAuthModal();
-        }
-    });
-}
-
-async function initializeAuth() {
-    const { data, error } = await supabaseClient.auth.getSession();
-    if (error) {
-        console.error('Error restoring session:', error);
-    }
-
-    currentUser = data.session?.user || null;
-    updateAdminUI();
-
-    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        currentUser = session?.user || null;
-        updateAdminUI();
-        if (currentUser) {
-            closeAuthModal();
-        }
-        await Promise.all([loadContent(), loadSongOfTheDay()]);
-    });
-}
-
-window.addEventListener('load', async () => {
-    bindAppEventListeners();
-    initializePromptGenerator();
-    await initializeAuth();
-    await Promise.all([loadContent(), loadSongOfTheDay()]);
-});
 
 // ============ PROMPT GENERATOR ============
 
